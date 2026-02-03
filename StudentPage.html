@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Phác đồ Maga Phương - <?= customer.name ?></title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <style>
+      :root {
+        --brand-main: #2563EB;
+        --brand-deep: #1E3A8A;
+        --brand-soft: #F8FBFF;
+        --brand-text: #1E3A8A;
+        --brand-light-blue: #3B82F6;
+        --zalo-blue: #0068ff;
+        
+        --fs-body: 16px;
+        --lh-body: 1.65;
+        --fs-long: 15px;
+        --lh-long: 1.8;
+        --radius-m: 22px;
+        --radius-l: 30px;
+        --card-pad-m: 20px;
+        --card-pad-l: 28px;
+        --shadow-soft: 0 10px 30px rgba(30,58,138,.06);
+        --shadow-mini: 0 6px 18px rgba(30,58,138,.05);
+        --border-soft: 1px solid rgba(147,197,253,.45);
+        
+        --grad-blue: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        --grad-deep: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%);
+      }
+      
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+      
+      body { 
+        font-family: 'Plus Jakarta Sans', sans-serif; 
+        background-color: var(--brand-soft); 
+        color: var(--brand-text); 
+        margin: 0; padding: 0; 
+        font-size: var(--fs-body);
+        line-height: var(--lh-body);
+        font-weight: 500;
+        -webkit-font-smoothing: antialiased; 
+      }
+      
+      .container { max-width: 1200px; margin: 0 auto; padding: 24px 14px 80px; }
+      @media (min-width: 768px) { .container { padding: 40px 16px 100px; } }
+      
+      header { text-align: center; margin-bottom: 28px; }
+      @media (min-width: 768px) { header { margin-bottom: 40px; } }
+      
+      h1 { 
+        font-size: 26px; 
+        font-weight: 800; 
+        color: var(--brand-deep); 
+        margin: 0 0 12px; 
+        line-height: 1.2; 
+        letter-spacing: -0.01em;
+      }
+      @media (min-width: 768px) { h1 { font-size: 42px; } }
+      
+      .slogan { 
+        font-size: 14px; 
+        color: var(--brand-light-blue); 
+        margin: 0 0 24px; 
+        padding: 0 20px;
+        font-weight: 500;
+        opacity: 0.8;
+      }
+      
+      .meta-info { display: flex; justify-content: center; }
+      .start-date { 
+        display: inline-block; 
+        padding: 8px 24px; 
+        background: white; 
+        border-radius: 100px; 
+        color: var(--brand-main); 
+        font-weight: 700; 
+        border: var(--border-soft); 
+        font-size: 12px; 
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        box-shadow: var(--shadow-mini);
+      }
+
+      .customer-box { 
+        background: white; 
+        border-radius: var(--radius-m); 
+        padding: var(--card-pad-m); 
+        box-shadow: var(--shadow-mini); 
+        margin-bottom: 24px; 
+        border: var(--border-soft); 
+      }
+      @media (min-width: 768px) {
+        .customer-box { border-radius: var(--radius-l); padding: var(--card-pad-l); box-shadow: var(--shadow-soft); margin-bottom: 30px; }
+      }
+      
+      .customer-label { font-size: 11px; font-weight: 700; color: var(--brand-main); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: block; }
+      .customer-name { font-size: 22px; font-weight: 800; color: var(--brand-deep); margin: 0 0 16px; tracking-tight: -0.01em; }
+      
+      .analysis-box { 
+        font-size: var(--fs-long); 
+        line-height: var(--lh-long); 
+        text-align: justify; 
+        color: var(--brand-text); 
+        opacity: 0.9;
+        white-space: pre-line;
+      }
+      
+      .main-layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
+      @media (min-width: 768px) { .main-layout { grid-template-columns: 360px 1fr; gap: 30px; } }
+
+      .sidebar-block { 
+        background: white; 
+        border-radius: var(--radius-m); 
+        padding: var(--card-pad-m); 
+        margin-bottom: 20px; 
+        border: var(--border-soft); 
+        box-shadow: var(--shadow-mini); 
+      }
+      @media (min-width: 768px) { .sidebar-block { border-radius: var(--radius-l); padding: var(--card-pad-l); } }
+      
+      .sidebar-block.dark { background: var(--brand-deep); color: white; border: none; }
+      .block-title { font-size: 18px; font-weight: 800; margin: 0 0 12px; border-bottom: 1px solid rgba(37, 99, 235, 0.1); padding-bottom: 8px; }
+      .sidebar-block.dark .block-title { border-bottom-color: rgba(255, 255, 255, 0.1); }
+      .block-content { font-size: var(--fs-long); line-height: var(--lh-long); text-align: justify; opacity: 0.95; white-space: pre-line; }
+
+      .block-video-btn, .modal-btn, .toggle-btn-label { 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center; 
+        border-radius: 9999px; 
+        border: none; 
+        color: white !important; 
+        font-weight: 700; 
+        text-decoration: none; 
+        text-transform: uppercase; 
+        letter-spacing: 0.08em; 
+        cursor: pointer; 
+        transition: all 0.3s;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+      }
+
+      .block-video-btn { margin-top: 20px; padding: 10px 24px; font-size: 11px; background: var(--grad-blue); }
+      .toggle-btn-label { display: flex; width: 100%; max-width: 300px; margin: 32px auto 0; padding: 18px; font-size: 12px; background: var(--grad-deep); }
+      .modal-btn { display: flex; width: 100%; padding: 18px; font-size: 12px; background: var(--grad-deep); margin-top: 10px; }
+
+      .block-video-btn:active, .modal-btn:active, .toggle-btn-label:active { transform: scale(0.96); }
+
+      .schedule-box { 
+        background: white; 
+        border-radius: var(--radius-m); 
+        padding: var(--card-pad-m); 
+        border: var(--border-soft); 
+        box-shadow: var(--shadow-mini); 
+      }
+      @media (min-width: 768px) { .schedule-box { border-radius: var(--radius-l); padding: var(--card-pad-l); } }
+      
+      .schedule-header { text-align: center; margin-bottom: 30px; }
+      .schedule-title { font-size: 22px; color: var(--brand-deep); font-weight: 800; margin-bottom: 16px; }
+      
+      .legend-container { display: flex; flex-wrap: wrap; gap: 12px 20px; justify-content: center; align-items: center; margin-bottom: 30px; }
+      .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+      .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+      .dot-border { width: 16px; height: 16px; border: 2px solid var(--brand-main); border-radius: 5px; display: inline-block; }
+      
+      .days-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 12px; }
+      @media (min-width: 480px) { .days-grid { grid-template-columns: repeat(2, 1fr); } }
+      @media (min-width: 992px) { .days-grid { grid-template-columns: repeat(3, 1fr); } }
+
+      .day-card { 
+        background: white; 
+        border: var(--border-soft); 
+        border-radius: 20px; 
+        padding: 16px; 
+        transition: all 0.3s; 
+        cursor: pointer;
+      }
+      .day-card.active { border: 2px solid var(--brand-main); box-shadow: 0 10px 25px rgba(37, 99, 235, 0.1); z-index: 10; transform: scale(1.02); }
+      .day-card.locked { opacity: 0.4; filter: grayscale(1); } /* Removed pointer-events: none to allow click notification */
+      
+      #toggle-30-days { display: none; }
+      .day-card.hidden-on-collapse { display: none; }
+      #toggle-30-days:checked ~ .days-grid .day-card.hidden-on-collapse { display: block; }
+      
+      .day-header { text-align: center; font-weight: 800; color: var(--brand-deep); font-size: 14px; border-bottom: 1px solid var(--brand-soft); margin-bottom: 12px; padding-bottom: 8px; letter-spacing: 0.04em; }
+      .task-item { text-align: center; margin-bottom: 4px; }
+      .task-trigger { text-decoration: none; font-size: 13px; padding: 10px 6px; display: block; cursor: pointer; border-radius: 12px; font-weight: 600; transition: background 0.2s; }
+      .task-trigger:hover { background: var(--brand-soft); color: var(--brand-main); }
+
+      .modal-system {
+        position: fixed; inset: 0; background: rgba(30, 58, 138, 0.8); z-index: 99999;
+        display: none; align-items: center; justify-content: center;
+        padding: 16px; backdrop-filter: blur(8px);
+      }
+      .modal-system.show { display: flex; }
+      .modal-inner {
+        background: white; width: 100%; max-width: 500px; border-radius: var(--radius-m);
+        max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+      }
+      @media (min-width: 768px) { .modal-inner { border-radius: var(--radius-l); } }
+      
+      .modal-header { padding: 24px 30px; background: var(--brand-soft); border-bottom: 1px solid #DBEAFE; position: relative; }
+      .modal-close-btn { position: absolute; right: 20px; top: 20px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--brand-deep); cursor: pointer; transition: 0.2s; }
+      .m-label-top { font-size: 10px; font-weight: 700; color: var(--brand-main); text-transform: uppercase; margin-bottom: 4px; letter-spacing: 2px; }
+      .m-title-main { font-size: 20px; font-weight: 800; color: var(--brand-deep); line-height: 1.25; }
+      .modal-body { padding: 24px 30px; overflow-y: auto; flex: 1; }
+      .m-instr-box { font-size: var(--fs-long); line-height: var(--lh-long); text-align: justify; color: var(--brand-text); opacity: 0.95; white-space: pre-line; }
+      .modal-footer { padding: 0 30px 30px; }
+      
+      .lock-screen {
+        position: fixed; inset: 0; background: var(--brand-soft); z-index: 100000;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 30px; text-align: center;
+      }
+      .lock-icon { width: 90px; height: 90px; background: white; border-radius: 28px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; box-shadow: var(--shadow-mini); font-size: 48px; }
+      .lock-msg { font-size: 20px; font-weight: 800; color: var(--brand-deep); max-width: 400px; margin-bottom: 32px; line-height: 1.5; }
+      .zalo-btn { background: var(--zalo-blue); color: white !important; font-weight: 700; padding: 18px 40px; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; box-shadow: 0 10px 25px rgba(0, 104, 255, 0.2); transition: 0.3s; }
+
+      .text-expand, .text-collapse { display: inline; }
+      #toggle-30-days:checked ~ .toggle-btn-label .text-expand { display: none; }
+      #toggle-30-days:not(:checked) ~ .toggle-btn-label .text-collapse { display: none; }
+
+      .refresh-toast {
+        position: fixed; bottom: 20px; right: 20px; background: var(--brand-deep); color: white;
+        padding: 10px 20px; border-radius: 50px; font-size: 12px; font-weight: 700;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; z-index: 100001;
+        animation: slideIn 0.3s ease-out;
+      }
+      @keyframes slideIn { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div id="refresh-indicator" class="refresh-toast">🔄 Đang cập nhật phác đồ mới nhất...</div>
+
+    <? if (customer.access_state === "DELETED") { ?>
+      <div class="lock-screen">
+          <div class="lock-icon">🔒</div>
+          <div class="lock-msg">Phác đồ của bạn đã bị khoá, vui lòng liên hệ với Mega Phương để được hỗ trợ</div>
+          <a href="https://zalo.me/0966888609" target="_blank" class="zalo-btn"><span>💬 Liên hệ qua Zalo</span></a>
+      </div>
+    <? } else { ?>
+    <div class="container">
+        <header>
+            <h1 id="app-title"><?= customer.app_title || "Phác đồ 30 ngày thay đổi khuôn mặt" ?></h1>
+            <p class="slogan" id="app-slogan">"<?= customer.app_slogan || "Hành trình đánh thức vẻ đẹp tự nhiên, gìn giữ thanh xuân." ?>"</p>
+            <div class="meta-info">
+              <div class="start-date" id="start-date-label">Bắt đầu: <?= Utilities.formatDate(new Date(customer.start), "GMT+7", "dd/MM/yyyy") ?></div>
+            </div>
+        </header>
+
+        <section class="customer-box">
+            <span class="customer-label">Học viên</span>
+            <div class="customer-name" id="customer-name-display"><?= customer.name ?></div>
+            <div class="analysis-box" id="customer-note-display"><?= customer.note || "Hệ thống đang cập nhật phân tích khuôn mặt cho bạn..." ?></div>
+        </section>
+
+        <div class="main-layout">
+            <aside class="sidebar">
+                <div class="sidebar-block dark">
+                  <h3 class="block-title">Ăn Nhai Cân Bằng</h3>
+                  <p class="block-content" id="customer-chewing-display"><?= customer.chewing || "Kích hoạt cơ yếu, giảm tải cơ khỏe. Giai đoạn đầu: tập bên trái 70% – bên phải 30%..." ?></p>
+                </div>
+                <div id="dynamic-blocks">
+                  <? if (customer.blocks && Array.isArray(customer.blocks)) { 
+                       customer.blocks.forEach(function(b) { ?>
+                  <div class="sidebar-block <?= b.type === 'dark' ? 'dark' : '' ?>">
+                    <h3 class="block-title"><?= b.title ?></h3>
+                    <p class="block-content"><?= b.content ?></p>
+                    <? if (b.videoLink || b.video_link) { ?>
+                      <button onclick="window.open('<?= b.videoLink || b.video_link ?>', '_blank')" class="block-video-btn">▶ Xem hướng dẫn</button>
+                    <? } ?>
+                  </div>
+                  <?   }); 
+                     } ?>
+                </div>
+            </aside>
+
+            <section class="schedule-section">
+                <div class="schedule-box">
+                    <div class="schedule-header">
+                        <h2 class="schedule-title">Lịch trình chi tiết</h2>
+                        <div class="legend-container">
+                            <div class="legend-item" style="color: #2563EB;"><span class="dot" style="background: #2563EB;"></span> Bắt buộc</div>
+                            <div class="legend-item" style="color: #10B981;"><span class="dot" style="background: #10B981;"></span> Bổ trợ</div>
+                            <div class="legend-item" style="color: #2563EB;"><span class="dot-border"></span> Đang học</div>
+                            <div class="legend-item" style="color: #ccc; opacity: 0.6;"><span class="dot" style="background: #ccc;"></span> Chưa mở</div>
+                        </div>
+                    </div>
+                    
+                    <input type="checkbox" id="toggle-30-days">
+                    <div class="days-grid" id="days-grid"></div>
+                    
+                    <label for="toggle-30-days" class="toggle-btn-label">
+                       <span class="text-expand">Xem tất cả 30 ngày</span>
+                       <span class="text-collapse">Thu gọn lịch trình</span>
+                    </label>
+                </div>
+            </section>
+        </div>
+    </div>
+    <? } ?>
+
+    <div id="app-modal" class="modal-system">
+        <div class="modal-inner">
+            <div class="modal-header">
+                <div class="modal-close-btn" onclick="closeModal()">&times;</div>
+                <div id="modal-header-content"></div>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer" id="modal-footer"></div>
+        </div>
+    </div>
+
+    <script>
+      var ALL_TASKS = <?!= JSON.stringify(customer.tasks || []) ?>;
+      var ACCESS = "<?!= customer.access_state ?>";
+      var _RAW_WARNING = <?= (customer.expire_warning === true) ? 'true' : 'false' ?>;
+      var WARNING = (String(_RAW_WARNING).toLowerCase() === 'true');
+      var END_DATE = "<?= customer.end ? Utilities.formatDate(new Date(customer.end), "GMT+7", "dd/MM/yyyy") : "" ?>";
+      var START_DATE = "<?= customer.start ? Utilities.formatDate(new Date(customer.start), "GMT+7", "dd/MM/yyyy") : "" ?>";
+      var ALLOWED_DAY = <?= customer.allowed_day || 0 ?>;
+      var PARAMS = <?!= JSON.stringify(params) ?>;
+      
+      var refreshInFlight = false; 
+      var currentPendingTask = null;
+
+      function parseDMY(dmy) { if (!dmy) return new Date(); const [d, m, y] = dmy.split('/').map(Number); return new Date(y, m - 1, d, 0, 0, 0); }
+      function formatDMY(dt) { if(!dt) return ""; const d = new Date(dt); return String(d.getDate()).padStart(2, '0') + "/" + String(d.getMonth() + 1).padStart(2, '0') + "/" + d.getFullYear(); }
+      function getUnlockDate(day) { const s = parseDMY(START_DATE); s.setDate(s.getDate() + (day - 1)); return formatDMY(s); }
+      
+      function normalizeType(t) { return (t || "").trim().toLowerCase(); }
+      function isMandatory(task) { const t = normalizeType(task.type); return t === "bắt buộc" || t === "bat buoc" || t.includes("bắt buộc") || t.includes("bat buoc"); }
+      function shouldBackgroundRefresh(task) { const dayNum = Number(task.day); return isMandatory(task) && Number.isFinite(dayNum) && dayNum > 0 && dayNum % 3 === 0; }
+
+      function closeModal() { document.getElementById('app-modal').classList.remove('show'); }
+      function showModal(title, body, footer, label = "", contentColor = null) {
+        document.getElementById('modal-header-content').innerHTML = '<div class="m-label-top" ' + (contentColor ? 'style="color: ' + contentColor + ';"' : '') + '>'+label+'</div><div class="m-title-main" ' + (contentColor ? 'style="color: ' + contentColor + ';"' : '') + '>'+title+'</div>';
+        document.getElementById('modal-body').innerHTML = '<div class="m-instr-box" ' + (contentColor ? 'style="color: ' + contentColor + ';"' : '') + '>' + body + '</div>';
+        document.getElementById('modal-footer').innerHTML = footer;
+        document.getElementById('app-modal').classList.add('show');
+      }
+
+      function renderDaysGrid() {
+        const grid = document.getElementById('days-grid');
+        if (!grid) return;
+        let html = '';
+        const maxDayInList = ALL_TASKS.length > 0 ? Math.max(...ALL_TASKS.map(t => t.day)) : 30;
+        const totalDays = Math.max(30, maxDayInList);
+
+        for(let i=1; i<=totalDays; i++) {
+          const dayTasks = ALL_TASKS.filter(t => t.day == i);
+          if (dayTasks.length === 0 && i > 30) continue;
+          let dayClass = "day-card";
+          if (i > 10) dayClass += " hidden-on-collapse";
+          if (ALLOWED_DAY === i && ACCESS === "ACTIVE") dayClass += " active";
+          
+          const isLocked = (i > ALLOWED_DAY || ACCESS !== "ACTIVE");
+          if (isLocked) dayClass += " locked";
+          
+          html += `<div class="${dayClass}" onclick="handleDayContainerClick(${i})"><div class="day-header">Ngày ${i}</div><div class="day-tasks">`;
+          dayTasks.forEach((task, idx) => {
+            const isMandatoryTask = isMandatory(task);
+            html += `<div class="task-item"><span onclick="event.stopPropagation(); handleTaskClick(${i}, ${idx})" class="task-trigger" style="color: ${isMandatoryTask ? '#2563EB' : '#10B981'};">${task.title || task.name || 'Bài tập'}</span></div>`;
+          });
+          if (dayTasks.length === 0) html += `<div class="task-item"><span class="task-trigger" style="color: #ccc; cursor: default; border: none; opacity: 0.3;">Trống</span></div>`;
+          html += `</div></div>`;
+        }
+        grid.innerHTML = html;
+      }
+
+      // Xử lý khi click vào ô ngày - hỗ trợ hiển thị thông báo ngay cả khi bài tập chưa mở
+      function handleDayContainerClick(day) {
+        if (ACCESS === "DELETED") return;
+        
+        if (ACCESS === "NOT_STARTED") {
+          showNotStartedMessage();
+          return;
+        }
+        if (ACCESS === "EXPIRED") {
+          showExpiredMessage();
+          return;
+        }
+        
+        if (day > ALLOWED_DAY) {
+          showLockedDayMessage(day);
+        }
+      }
+
+      function showLockedDayMessage(day) {
+        showModal("Chưa đến ngày mở bài", "Ngày học thứ " + day + " hiện đang được đóng kín để đảm bảo lộ trình tập luyện khoa học nhất cho cơ mặt của bạn. Bài tập này sẽ tự động mở khóa vào ngày <b>" + getUnlockDate(day) + "</b>. Kiên trì tập đúng tiến độ là chìa khóa của cái đẹp!", '<button class="modal-btn" onclick="closeModal()">TÔI SẼ CHỜ ĐỢI</button>', "BÀI TẬP ĐANG KHÓA");
+      }
+      
+      function showNotStartedMessage() {
+        showModal("Chưa bắt đầu lộ trình", "Hành trình Yoga Face của bạn sẽ chính thức bắt đầu từ ngày <b>" + START_DATE + "</b>. Hãy chuẩn bị tinh thần và trang thiết bị cần thiết nhé!", '<button class="modal-btn" onclick="closeModal()">TÔI ĐÃ HIỂU</button>', "THÀNH VIÊN MỚI");
+      }
+      
+      function showExpiredMessage() {
+        showModal("Phác đồ đã hết hạn", "Phác đồ cá nhân của bạn đã hết thời hạn hỗ trợ từ ngày <b>" + END_DATE + "</b>. Để tiếp tục nhận được sự đồng hành và hướng dẫn mới nhất, hãy liên hệ MeGa Phương nhé.", '<button class="modal-btn" onclick="window.open(\'https://zalo.me/0966888609\', \'_blank\')">💬 LIÊN HỆ GIA HẠN</button>', "HẾT HẠN TRUY CẬP");
+      }
+
+      function handleTaskClick(day, taskIdx) {
+        if (ACCESS === "DELETED") return;
+        if (ACCESS === "NOT_STARTED") {
+          showNotStartedMessage();
+          return;
+        }
+        if (ACCESS === "EXPIRED") {
+          showExpiredMessage();
+          return;
+        }
+        if (day > ALLOWED_DAY) {
+          showLockedDayMessage(day);
+          return;
+        }
+        const dayTasks = ALL_TASKS.filter(t => t.day == day);
+        const task = dayTasks[taskIdx];
+        if (!task) return;
+        
+        currentPendingTask = task;
+        if (WARNING === true) {
+          showModal("Nhắc nhở gia hạn phác đồ", "Phác đồ cá nhân của bạn sắp kết thúc thời hạn vào ngày <b>" + END_DATE + "</b>. Đừng quên liên hệ với MeGa Phương để đăng ký lộ trình mới, tránh bị gián đoạn chuỗi ngày luyện tập.", 
+            '<button class="modal-btn" onclick="onWarningOk()">TÔI ĐÃ HIỂU</button>', "CẢNH BÁO SẮP HẾT HẠN");
+          return;
+        }
+        proceedToOpenTask(currentPendingTask);
+      }
+
+      function onWarningOk() {
+        if (currentPendingTask) proceedToOpenTask(currentPendingTask);
+        else closeModal();
+      }
+
+      function proceedToOpenTask(task) {
+        showTaskDetail(task);
+        if (shouldBackgroundRefresh(task)) runSilentRefresh();
+      }
+
+      function showTaskDetail(task) {
+        const isMandatoryTask = isMandatory(task);
+        const taskColor = isMandatoryTask ? '#2563EB' : '#10B981';
+        let footer = task.link ? `<button class="modal-btn" style="background: ${isMandatoryTask ? 'var(--grad-blue)' : 'var(--grad-deep)'};" onclick="window.open('${task.link}', '_blank')">▶ Xem video hướng dẫn</button>` : `<button class="modal-btn" onclick="closeModal()">ĐÓNG</button>`;
+        showModal(task.title || task.name || 'Bài tập', task.detail || "Chi tiết bài tập đang được MeGa Phương biên soạn dành riêng cho tình trạng của bạn. Vui lòng quay lại sau ít phút...", footer, "Ngày " + task.day + " • " + (isMandatoryTask ? "Bắt buộc" : "Bổ trợ"), taskColor);
+      }
+
+      function runSilentRefresh() {
+        if (refreshInFlight) return;
+        refreshInFlight = true;
+        const indicator = document.getElementById('refresh-indicator');
+        if(indicator) indicator.style.display = 'block';
+
+        try {
+          google.script.run
+            .withSuccessHandler(function(data) {
+              refreshInFlight = false;
+              if(indicator) indicator.style.display = 'none';
+              if (data && data.ok) applyRefreshedData(data);
+            })
+            .withFailureHandler(function() { 
+              refreshInFlight = false; 
+              if(indicator) indicator.style.display = 'none';
+            })
+            .getServerData(PARAMS.u, PARAMS.t);
+        } catch (e) { 
+          refreshInFlight = false; 
+          if(indicator) indicator.style.display = 'none';
+        }
+      }
+
+      function applyRefreshedData(data) {
+        // TỰ ĐỘNG CẬP NHẬT LỊCH TẬP MỚI NHẤT TỪ MASTER
+        if (data.tasks) {
+          ALL_TASKS = data.tasks;
+        }
+        
+        ACCESS = data.access_state;
+        WARNING = (String(data.expire_warning).toLowerCase() === 'true');
+        ALLOWED_DAY = data.allowed_day;
+        END_DATE = data.end ? formatDMY(data.end) : END_DATE;
+        START_DATE = data.start ? formatDMY(data.start) : START_DATE;
+        
+        if(document.getElementById('app-title')) document.getElementById('app-title').innerText = data.app_title || "Phác đồ 30 ngày thay đổi khuôn mặt";
+        if(document.getElementById('app-slogan')) document.getElementById('app-slogan').innerText = '"' + (data.app_slogan || "Hành trình đánh thức vẻ đẹp tự nhiên, gìn giữ thanh xuân.") + '"';
+        if(document.getElementById('customer-name-display')) document.getElementById('customer-name-display').innerText = data.name;
+        if(document.getElementById('customer-note-display')) document.getElementById('customer-note-display').innerText = (data.note || "Hệ thống đang cập nhật phân tích khuôn mặt cho bạn...");
+        if(document.getElementById('customer-chewing-display')) document.getElementById('customer-chewing-display').innerText = data.chewing || "Kích hoạt cơ yếu, giảm tải cơ khỏe...";
+        if(document.getElementById('start-date-label')) document.getElementById('start-date-label').innerText = "Bắt đầu: " + START_DATE;
+        
+        const blocksContainer = document.getElementById('dynamic-blocks');
+        if (blocksContainer && data.blocks && Array.isArray(data.blocks)) {
+            let blocksHtml = '';
+            data.blocks.forEach(b => {
+                blocksHtml += `<div class="sidebar-block ${b.type === 'dark' ? 'dark' : ''}"><h3 class="block-title">${b.title}</h3><p class="block-content">${b.content}</p>${(b.videoLink || b.video_link) ? `<button onclick="window.open('${b.videoLink || b.video_link}', '_blank')" class="block-video-btn">▶ Xem hướng dẫn</button>` : ''}</div>`;
+            });
+            blocksContainer.innerHTML = blocksHtml;
+        }
+        renderDaysGrid();
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        renderDaysGrid();
+        // Kiểm tra đồng bộ ngay lập tức khi trang tải
+        if (ACCESS === "ACTIVE") runSilentRefresh();
+      });
+      window.onclick = function(e) { if (e.target.id === 'app-modal') closeModal(); };
+    </script>
+</body>
+</html>
