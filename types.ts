@@ -1,7 +1,7 @@
 
 export enum ExerciseType {
-  MANDATORY = "Bắt buộc",
-  OPTIONAL = "Bổ trợ"
+  MANDATORY = "Bài bắt buộc",
+  OPTIONAL = "Bài bổ trợ"
 }
 
 export enum CustomerStatus {
@@ -15,7 +15,7 @@ export interface Product {
   ten_sp: string;
   gia_nhap: number;
   gia_ban: number;
-  trang_thai: number; // 1 = in stock, 0 = out of stock
+  trang_thai: number; 
 }
 
 export interface PurchasedProduct {
@@ -33,7 +33,7 @@ export interface SidebarBlock {
   content: string;
   type: 'default' | 'dark';
   video_link?: string;
-  color?: string;
+  is_chat?: boolean;
 }
 
 export interface ExerciseTask {
@@ -45,19 +45,19 @@ export interface ExerciseTask {
   link: string;
   is_deleted: boolean;
   video_date?: string; 
-  _rowNumber?: number; // Số dòng thực tế trong Google Sheet
-  _video_date_key?: string; // Khóa ngày chuẩn hóa yyyy-MM-dd
+  _rowNumber?: number;
+  _video_date_key?: string;
+  _is_master?: boolean; // Flag to identify if task is from master sheet
 }
 
 export interface VideoGroup {
   video_date: string;
-  video_date_key: string; // Khóa ngày chuẩn hóa yyyy-MM-dd
+  video_date_key: string;
   total_days: number;
   total_tasks: number;
   mandatory_tasks: number;
   optional_tasks: number;
   active_students: number;
-  is_invalid?: boolean; // Đánh dấu nếu năm bất thường (<2000 hoặc >2100)
 }
 
 export interface Customer {
@@ -85,4 +85,9 @@ export interface Customer {
   updated_at: string;
   app_title?: string;
   app_slogan?: string;
+  expire_warning?: boolean;
+  // Fix: Added missing optional properties used in ClientView logic to satisfy TypeScript
+  allowed_day?: number;
+  access_state?: string;
+  blocks?: SidebarBlock[];
 }

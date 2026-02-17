@@ -1,7 +1,7 @@
 
 /**
- * MAGA PHƯƠNG - BACKEND CORE (Google Apps Script) - OPTIMIZED V53
- * FIX: ADDED MISSING getCustomer ACTION
+ * MAGA PHƯƠNG - BACKEND CORE (Google Apps Script)
+ * Hệ thống quản lý phác đồ Yoga Face 30 ngày.
  */
 
 const SPREADSHEET_ID = '1SV3Zwk93Kti3YxyYuRfTwkM9arm893t0rAMT7iAWeP0';
@@ -10,293 +10,401 @@ const CUSTOMER_SHEET_NAME = 'Customers';
 const PRODUCT_SHEET_NAME = 'Sản phẩm';
 const PLAN_SHEET_NAME = 'Lịch trình';
 const TIMEZONE = "Asia/Ho_Chi_Minh";
-const CACHE_TTL = 30;
 
-function wrapResponse_(success, data, error, action) {
-  const response = { success: !!success, data: data || null, error: error || null, meta: { v: "V53", action, time: new Date().toISOString() } };
-  return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+function toDateKey_Global(input) {
+  if (!input) return "";
+  if (input instanceof Date) {
+    if (isNaN(input.getTime()) || input.getTime() === 0) return "";
+    return Utilities.formatDate(input, TIMEZONE, "yyyy-MM-dd");
+  }
+  let s = String(input).trim();
+  if (!s || s === "0" || s.startsWith("1970") || s.startsWith("01/01/1970")) return "";
+  if (s.includes('T')) s = s.split('T')[0];
+  let parts = s.split(/[/-]/);
+  if (parts.length === 3) {
+    let d, m, y;
+    if (parts[0].length === 4) { y = parts[0]; m = parts[1]; d = parts[2]; }
+    else { d = parts[0]; m = parts[1]; y = parts[2]; }
+    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  return s;
 }
 
-function clearBackendCache_() {
-  try {
-    const cache = CacheService.getScriptCache();
-    cache.removeAll(["CACHE_getCustomers", "CACHE_getProducts", "CACHE_getVideoGroups", "CACHE_getVideoDates"]);
-  } catch(e) {}
+function toDate_Global(input) {
+  const k = toDateKey_Global(input);
+  if (!k) return null;
+  const p = k.split('-');
+  return new Date(p[0], p[1]-1, p[2]);
+}
+
+function getSheetSmart_(ss, targetName) {
+  const sheets = ss.getSheets();
+  const normalizedTarget = targetName.toLowerCase().replace(/\s+/g, '');
+  let sheet = ss.getSheetByName(targetName);
+  if (sheet) return sheet;
+  for (let s of sheets) {
+    const sName = s.getName().toLowerCase().replace(/\s+/g, '');
+    if (sName.includes(normalizedTarget) || normalizedTarget.includes(sName)) return s;
+  }
+  return null;
+}
+
+function dbReadSheet_Global(ss, name) {
+  const s = getSheetSmart_(ss, name);
+  if (!s) return [];
+  const v = s.getDataRange().getValues();
+  if (v.length < 2) return [];
+  const h = v[0].map(x => String(x || "").toLowerCase().trim().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_'));
+  
+  return v.slice(1).map((r, i) => {
+    const o = { _rowNumber: i + 2 };
+    let hasContent = false;
+    h.forEach((x, j) => {
+      let val = r[j];
+      if (val !== "" && val !== null && val !== undefined) hasContent = true;
+      if (['start_date', 'end_date', 'video_date'].includes(x)) {
+        val = toDateKey_Global(val);
+      }
+      o[x] = val;
+    });
+
+    if (name === MASTER_SHEET_NAME || name === PLAN_SHEET_NAME) {
+      o.title = o.ten_bai_tap || o.bai_tap || o.title || "";
+      o.detail = o.chi_tiet || o.noi_dung || o.detail || "";
+      o.link = o.link_video || o.video || o.link || "";
+      o.type = o.loai || o.phan_loai || o.type || "Bài bắt buộc";
+      o.day = Number(o.n || o.ngay || o.day || 0);
+    }
+    return hasContent ? o : null;
+  }).filter(x => x !== null);
+}
+
+function calculateAccessState(customer) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = toDate_Global(customer.start_date);
+  const end = toDate_Global(customer.end_date);
+  
+  let allowed = 0, state = "ACTIVE";
+  if (start) {
+    allowed = Math.floor((today.getTime() - start.getTime()) / 86400000) + 1;
+    if (allowed < 1) state = "NOT_STARTED";
+  }
+  
+  if (customer.status === 'DELETED' || customer.status === 'INACTIVE') state = "DELETED";
+  else if (end && today > end) state = "EXPIRED";
+  
+  return { state, allowed_day: Math.max(0, allowed) };
+}
+
+function getPlanData(ss, id, date) {
+  const customer = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME).find(c => String(c.customer_id).trim() === String(id).trim());
+  const isCustomized = customer ? (String(customer.is_customized) === "1" || customer.is_customized === true) : false;
+
+  if (isCustomized && id && id !== "NEW") {
+    const studentTasks = dbReadSheet_Global(ss, PLAN_SHEET_NAME)
+      .filter(t => String(t.customer_id).trim() === String(id).trim());
+    
+    if (studentTasks.length > 0) {
+      return studentTasks.map(t => {
+        t._is_master = false;
+        return t;
+      }).sort((a, b) => Number(a.day) - Number(b.day));
+    }
+  }
+
+  const masterKey = toDateKey_Global(date);
+  if (!masterKey) return [];
+  
+  const allMasterTasks = dbReadSheet_Global(ss, MASTER_SHEET_NAME);
+  return allMasterTasks
+    .filter(t => toDateKey_Global(t.video_date) === masterKey)
+    .map(t => {
+      t._is_master = true;
+      return t;
+    })
+    .sort((a, b) => Number(a.day) - Number(b.day));
 }
 
 function doGet(e) {
-  const params = e.parameter || {};
-  const action = params.action;
-  if (!action) return wrapResponse_(false, null, 'MISSING_ACTION', 'NONE');
+  const u = e.parameter.u;
+  const t = e.parameter.t;
+  const action = e.parameter.action;
+
+  if (u && t && !action) {
+    return renderStudentPage(u, t);
+  }
   
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let res;
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    if (['getCustomers', 'getProducts', 'getVideoGroups', 'getVideoDates'].includes(action)) {
-      const cached = CacheService.getScriptCache().get("CACHE_" + action);
-      if (cached) return wrapResponse_(true, JSON.parse(cached), null, action + "_cached");
-    }
-    
-    let result;
     switch (action) {
-      case 'getCustomers': result = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME); break;
-      case 'getCustomer': result = getCustomerById_Global(ss, params.id); break;
-      case 'getProducts': result = dbReadSheet_Global(ss, PRODUCT_SHEET_NAME); break;
-      case 'getVideoGroups': result = getVideoGroupStats(ss); break;
-      case 'getVideoDates': result = getUniqueVideoDates(ss); break;
-      case 'getPlan': result = getPlanData(ss, params.customerId, params.videoDate); break;
-      case 'diagnoseMasterPlans': result = diagnoseMasterPlans(ss); break;
-      default: return wrapResponse_(false, null, 'UNKNOWN_GET_ACTION: ' + action, action);
+      case 'getCustomers': res = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME); break;
+      case 'getCustomer': 
+        const cObj = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME).find(c => String(c.customer_id) === String(e.parameter.id));
+        if (cObj) {
+          const acc = calculateAccessState(cObj);
+          cObj.access_state = acc.state;
+          cObj.allowed_day = acc.allowed_day;
+        }
+        res = cObj;
+        break;
+      case 'getPlan': res = getPlanData(ss, e.parameter.customerId, e.parameter.videoDate); break;
+      case 'getVideoDates': 
+        const masterSheet = getSheetSmart_(ss, MASTER_SHEET_NAME);
+        if (!masterSheet) res = [];
+        else {
+          const v = masterSheet.getDataRange().getValues();
+          const headers = v[0].map(x => String(x||"").toLowerCase().trim());
+          const vdIdx = headers.indexOf("video_date");
+          const set = new Set();
+          for(let i=1; i<v.length; i++) {
+            const k = toDateKey_Global(v[i][vdIdx]);
+            if(k) set.add(k);
+          }
+          res = Array.from(set).sort().reverse();
+        }
+        break;
+      case 'getVideoGroups':
+        const m = dbReadSheet_Global(ss, MASTER_SHEET_NAME);
+        const custs = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME);
+        const groups = {};
+        m.forEach(t => {
+          const k = toDateKey_Global(t.video_date);
+          if (!k) return;
+          if (!groups[k]) groups[k] = { video_date_key: k, video_date: t.video_date, total_tasks: 0, mandatory_tasks: 0, optional_tasks: 0, days: new Set() };
+          groups[k].total_tasks++;
+          const type = String(t.type || t.loai || "").toLowerCase();
+          if (type.includes("bắt buộc") || type.includes("bat buoc")) groups[k].mandatory_tasks++;
+          else groups[k].optional_tasks++;
+          groups[k].days.add(Number(t.day) || 0);
+        });
+        res = Object.values(groups).map(g => {
+          g.total_days = g.days.size;
+          g.active_students = custs.filter(x => toDateKey_Global(x.video_date) === g.video_date_key && x.status !== "DELETED").length;
+          delete g.days;
+          return g;
+        });
+        break;
+      case 'getProducts': res = dbReadSheet_Global(ss, PRODUCT_SHEET_NAME); break;
+      case 'test': res = "OK"; break;
+      default: res = "Action not found";
     }
-    
-    if (result && ['getCustomers', 'getProducts', 'getVideoGroups', 'getVideoDates'].includes(action)) {
-       try { CacheService.getScriptCache().put("CACHE_" + action, JSON.stringify(result), CACHE_TTL); } catch(e){}
-    }
-    return wrapResponse_(true, result, null, action);
-  } catch (err) {
-    return wrapResponse_(false, null, err.toString(), action);
+    return ContentService.createTextOutput(JSON.stringify({success:true, data:res})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) { 
+    return ContentService.createTextOutput(JSON.stringify({success:false, error:err.toString()})).setMimeType(ContentService.MimeType.JSON); 
   }
 }
 
 function doPost(e) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   try {
-    let params = JSON.parse(e.postData.contents);
-    const action = params.action;
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    clearBackendCache_();
+    const postData = JSON.parse(e.postData.contents);
+    const action = postData.action;
+    let res;
     
-    let result;
     switch (action) {
-      case 'upsertCustomer': result = upsertCustomer(ss, params.payload); break;
-      case 'savePlan': result = savePlan(ss, params.customerId, params.tasks); break;
-      case 'saveVideoGroupTasks': result = saveVideoGroupTasksBatch(ss, params.videoDate, params.tasks); break;
-      case 'deleteVideoTask': result = deleteVideoTask(ss, params.rowNumber); break;
-      case 'deleteVideoGroup': result = deleteVideoGroupBatch(ss, params.videoDateKey); break;
-      case 'saveProducts': result = saveProducts(ss, params.payload); break;
-      case 'deleteCustomer': result = deleteCustomerById(ss, params.id); break;
-      default: return wrapResponse_(false, null, 'UNKNOWN_POST_ACTION: ' + action, action);
+      case 'upsertCustomer':
+        res = upsertCustomer_Backend(ss, postData.payload);
+        break;
+      case 'saveProducts':
+        const pSheet = getSheetSmart_(ss, PRODUCT_SHEET_NAME);
+        const pHeaders = ["ID_SP", "Ten_SP", "Gia_Nhap", "Gia_Ban", "Trang_Thai"];
+        const pRows = [pHeaders, ...postData.payload.map(x => [x.id_sp, x.ten_sp, x.gia_nhap, x.gia_ban, x.trang_thai])];
+        pSheet.clear().getRange(1, 1, pRows.length, 5).setValues(pRows);
+        res = true;
+        break;
+      case 'deleteCustomer':
+        const cSheet = getSheetSmart_(ss, CUSTOMER_SHEET_NAME);
+        const cValues = cSheet.getDataRange().getValues();
+        const cIdIdx = cValues[0].map(h => String(h||"").toLowerCase()).indexOf("customer_id");
+        const cStIdx = cValues[0].map(h => String(h||"").toLowerCase()).indexOf("status");
+        for (let i = 1; i < cValues.length; i++) {
+          if (String(cValues[i][cIdIdx]) === String(postData.id)) {
+            cSheet.getRange(i + 1, cStIdx + 1).setValue("DELETED");
+            break;
+          }
+        }
+        res = true;
+        break;
+      case 'saveVideoGroupTasks':
+        const mSheet = getSheetSmart_(ss, MASTER_SHEET_NAME);
+        const mKey = toDateKey_Global(postData.videoDate);
+        const mValues = mSheet.getDataRange().getValues();
+        const mHeaders = mValues[0];
+        const headersLower = mHeaders.map(h => String(h||"").toLowerCase());
+        const mVdIdx = headersLower.indexOf("video_date");
+        const mNewRows = [mHeaders];
+        for (let i = 1; i < mValues.length; i++) {
+          if (toDateKey_Global(mValues[i][mVdIdx]) !== mKey) mNewRows.push(mValues[i]);
+        }
+        postData.tasks.forEach(t => {
+          const newRow = new Array(mHeaders.length).fill("");
+          headersLower.forEach((h, j) => {
+            if (h === 'day' || h === 'n' || h === 'ngay') newRow[j] = t.day || 0;
+            else if (h === 'type' || h === 'loai') newRow[j] = t.type || "";
+            else if (h === 'title' || h === 'ten_bai_tap') newRow[j] = t.title || "";
+            else if (h === 'detail' || h === 'chi_tiet') newRow[j] = t.detail || "";
+            else if (h === 'link' || h === 'link_video') newRow[j] = t.link || "";
+            else if (h === 'video_date') newRow[j] = mKey;
+          });
+          mNewRows.push(newRow);
+        });
+        mSheet.clear().getRange(1, 1, mNewRows.length, mHeaders.length).setValues(mNewRows);
+        res = true;
+        break;
+      case 'deleteVideoTask':
+        getSheetSmart_(ss, MASTER_SHEET_NAME).deleteRow(postData.rowNumber);
+        res = true;
+        break;
+      case 'deleteVideoGroup':
+        const mgSheet = getSheetSmart_(ss, MASTER_SHEET_NAME);
+        const mgValues = mgSheet.getDataRange().getValues();
+        const mgVdIdx = mgValues[0].map(h => String(h||"").toLowerCase()).indexOf("video_date");
+        for (let i = mgValues.length - 1; i >= 1; i--) {
+          if (toDateKey_Global(mgValues[i][mgVdIdx]) === postData.videoDateKey) mgSheet.deleteRow(i + 1);
+        }
+        res = true;
+        break;
+      default: throw new Error('Action not supported: ' + action);
     }
-    return wrapResponse_(true, result, null, action);
-  } catch (err) {
-    return wrapResponse_(false, null, err.toString(), "POST_ERROR");
+    return ContentService.createTextOutput(JSON.stringify({success:true, data:res})).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) { 
+    return ContentService.createTextOutput(JSON.stringify({success:false, error:err.toString()})).setMimeType(ContentService.MimeType.JSON); 
   }
 }
 
-function toDateKey_Global(input) {
-  if (!input) return "";
-  if (input instanceof Date) return Utilities.formatDate(input, TIMEZONE, "yyyy-MM-dd");
-  
-  let s = String(input).trim();
-  if (!s) return "";
+function upsertCustomer_Backend(ss, payload) {
+  const sheet = getSheetSmart_(ss, CUSTOMER_SHEET_NAME);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0].map(h => String(h || "").toLowerCase().trim().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_'));
 
-  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoMatch) return isoMatch[1] + "-" + isoMatch[2] + "-" + isoMatch[3];
-
-  let parts = s.split(/[/-]/);
-  if (parts.length >= 2) {
-    let d, m, y;
-    if (parts[0].length === 4) { y = parts[0]; m = parts[1]; d = parts[2] || "01"; }
-    else { d = parts[0]; m = parts[1]; y = parts[2] || new Date().getFullYear(); }
-    try {
-      let dt = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-      if (!isNaN(dt.getTime())) return Utilities.formatDate(dt, TIMEZONE, "yyyy-MM-dd");
-    } catch(e) {}
+  if (!payload.customer_id || String(payload.customer_id).startsWith('NEW')) {
+    payload.customer_id = 'C' + new Date().getTime();
+    payload.token = Math.random().toString(36).substring(2, 10);
+    payload.status = 'ACTIVE';
+    payload.created_at = new Date().toISOString();
   }
-  return "";
-}
-
-function formatVnDisplayDate_Global(input) {
-  const key = toDateKey_Global(input);
-  if (!key) return String(input);
-  const p = key.split('-');
-  return p[2] + "/" + p[1] + "/" + p[0];
-}
-
-function dbReadSheet_Global(ss, sheetName) {
-  const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) return [];
-  const lastRow = sheet.getLastRow();
-  const lastCol = sheet.getLastColumn();
-  if (lastRow < 2 || lastCol < 1) return [];
+  payload.updated_at = new Date().toISOString();
   
-  const values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
-  const headers = values[0].map(h => String(h || "").toLowerCase().trim().replace(/\s+/g, '_'));
-  
-  return values.slice(1).map((row, i) => {
-    const obj = { _rowNumber: i + 2 };
-    headers.forEach((h, j) => {
-      if (!h) return;
-      let val = row[j];
-      if (val instanceof Date) {
-        val = (h.includes('date') || h === 'video_date' || h === 'created_at' || h === 'updated_at') 
-          ? formatVnDisplayDate_Global(val) 
-          : Utilities.formatDate(val, TIMEZONE, "yyyy-MM-dd");
-      }
-      obj[h] = val;
-    });
-    return obj;
+  if (payload.hasOwnProperty('tasks')) {
+    payload.is_customized = (Array.isArray(payload.tasks) && payload.tasks.length > 0) ? 1 : 0;
+  }
+
+  if (payload.start_date && payload.duration_days) {
+    const sDate = toDate_Global(payload.start_date);
+    if (sDate) {
+      const eDate = new Date(sDate.getTime());
+      eDate.setDate(eDate.getDate() + Number(payload.duration_days));
+      payload.end_date = toDateKey_Global(eDate);
+    }
+  }
+
+  const scriptUrl = ScriptApp.getService().getUrl();
+  if (scriptUrl) payload.link = `${scriptUrl}?u=${payload.customer_id}&t=${payload.token}`;
+
+  const rowData = headers.map(h => {
+    let val = payload[h];
+    if (val === undefined || val === null) val = "";
+    return (typeof val === 'object' && val !== null) ? JSON.stringify(val) : val;
   });
-}
 
-function getCustomerById_Global(ss, id) {
-  if (!id) return null;
-  const customers = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME);
-  return customers.find(c => String(c.customer_id) === String(id)) || null;
-}
+  let rowIndex = -1;
+  const idIdx = headers.indexOf('customer_id');
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][idIdx]) === String(payload.customer_id)) {
+      rowIndex = i + 1;
+      break;
+    }
+  }
+  
+  if (rowIndex > 0) sheet.getRange(rowIndex, 1, 1, headers.length).setValues([rowData]);
+  else sheet.appendRow(rowData);
 
-function getPlanData(ss, customerId, videoDate) {
-  const targetKey = toDateKey_Global(videoDate);
-  if (!customerId || customerId === "NEW") {
-    const sheet = ss.getSheetByName(MASTER_SHEET_NAME);
-    if (!sheet || sheet.getLastRow() < 2) return [];
-    const values = sheet.getDataRange().getValues();
+  if (payload.hasOwnProperty('tasks')) {
+    const pSheet = getSheetSmart_(ss, PLAN_SHEET_NAME);
+    const pValues = pSheet.getDataRange().getValues();
+    const pHeaders = pValues[0];
+    const pNewRows = [pHeaders];
+    for (let i = 1; i < pValues.length; i++) {
+      if (String(pValues[i][0]) !== String(payload.customer_id)) pNewRows.push(pValues[i]);
+    }
     
-    return values.slice(1)
-      .map((r, i) => ({
-        day: r[0],
-        type: r[1],
-        title: r[2],
-        detail: r[3],
-        link: r[4],
-        video_date: r[5], 
-        _rowNumber: i + 2 
-      }))
-      .filter(task => toDateKey_Global(task.video_date) === targetKey)
-      .map(task => ({
-        ...task,
-        video_date: formatVnDisplayDate_Global(task.video_date)
-      }))
-      .sort((a, b) => a.day - b.day);
-  }
-  const planSheet = ss.getSheetByName(PLAN_SHEET_NAME);
-  if (!planSheet || planSheet.getLastRow() < 2) return [];
-  return dbReadSheet_Global(ss, PLAN_SHEET_NAME)
-    .filter(t => String(t.customer_id) === String(customerId))
-    .sort((a, b) => a.day - b.day);
-}
-
-function getVideoGroupStats(ss) {
-  const masterSheet = ss.getSheetByName(MASTER_SHEET_NAME);
-  if (!masterSheet) return [];
-  const mValues = masterSheet.getLastRow() > 1 ? masterSheet.getDataRange().getValues() : [];
-  if (mValues.length < 2) return [];
-  const custSheet = ss.getSheetByName(CUSTOMER_SHEET_NAME);
-  const cValues = (custSheet && custSheet.getLastRow() > 1) ? custSheet.getDataRange().getValues() : [];
-  const groups = {};
-  mValues.slice(1).forEach(r => {
-    const key = toDateKey_Global(r[5]);
-    if (!key) return;
-    if (!groups[key]) groups[key] = { video_date: formatVnDisplayDate_Global(r[5]), video_date_key: key, total_days: new Set(), total_tasks: 0, mandatory_tasks: 0, optional_tasks: 0, active_students: 0 };
-    const g = groups[key];
-    g.total_tasks++;
-    g.total_days.add(r[0]);
-    if (String(r[1]).includes('Bắt buộc')) g.mandatory_tasks++; else g.optional_tasks++;
-  });
-  if (cValues.length > 1) {
-    const cHeaders = cValues[0].map(h => String(h || "").toLowerCase().trim());
-    const vIdx = cHeaders.indexOf('video_date'), sIdx = cHeaders.indexOf('status');
-    if (vIdx > -1 && sIdx > -1) {
-      cValues.slice(1).forEach(r => {
-        const key = toDateKey_Global(r[vIdx]);
-        if (groups[key] && String(r[sIdx]).toUpperCase() === 'ACTIVE') groups[key].active_students++;
+    if (Array.isArray(payload.tasks) && payload.tasks.length > 0) {
+      payload.tasks.forEach(t => {
+        if (!t.is_deleted) pNewRows.push([String(payload.customer_id), t.day, t.type, t.title, t.detail, t.link, 0]);
       });
     }
-  }
-  return Object.values(groups).map(g => ({ ...g, total_days: g.total_days.size })).sort((a, b) => b.video_date_key.localeCompare(a.video_date_key));
-}
-
-function getUniqueVideoDates(ss) {
-  const sheet = ss.getSheetByName(MASTER_SHEET_NAME);
-  if (!sheet || sheet.getLastRow() < 2) return [];
-  const values = sheet.getDataRange().getValues();
-  const dates = [...new Set(values.slice(1).map(r => toDateKey_Global(r[5])).filter(Boolean))];
-  return dates.sort().reverse().map(formatVnDisplayDate_Global);
-}
-
-function saveVideoGroupTasksBatch(ss, videoDate, tasks) {
-  const sheet = ss.getSheetByName(MASTER_SHEET_NAME);
-  if (!sheet) throw new Error("Master sheet not found");
-  const targetKey = toDateKey_Global(videoDate);
-  const displayDate = formatVnDisplayDate_Global(videoDate);
-  const values = sheet.getLastRow() > 0 ? sheet.getDataRange().getValues() : [["Day", "Type", "Title", "Detail", "Link", "Video Date"]];
-  const newRows = [values[0], ...values.slice(1).filter(r => toDateKey_Global(r[5]) !== targetKey)];
-  tasks.forEach(t => newRows.push([parseInt(t.day) || 1, t.type, t.title, t.detail, t.link, displayDate]));
-  sheet.clearContents().getRange(1, 1, newRows.length, 6).setValues(newRows);
-  if (newRows.length > 1) sheet.getRange(2, 6, newRows.length-1, 1).setNumberFormat('dd/MM/yyyy');
-  return { success: true, targetKey };
-}
-
-function deleteVideoGroupBatch(ss, videoDateKey) {
-  const sheet = ss.getSheetByName(MASTER_SHEET_NAME);
-  if (!sheet) return { success: false };
-  const targetKey = toDateKey_Global(videoDateKey);
-  const values = sheet.getDataRange().getValues();
-  const newRows = [values[0], ...values.slice(1).filter(r => toDateKey_Global(r[5]) !== targetKey)];
-  sheet.clearContents().getRange(1, 1, newRows.length, 6).setValues(newRows);
-  return { success: true };
-}
-
-function deleteVideoTask(ss, row) {
-  const sheet = ss.getSheetByName(MASTER_SHEET_NAME);
-  if (sheet && row <= sheet.getLastRow() && row > 1) sheet.deleteRow(row);
-  return { success: true };
-}
-
-function upsertCustomer(ss, payload) {
-  const sheet = ss.getSheetByName(CUSTOMER_SHEET_NAME);
-  if (!sheet) throw new Error("Customer sheet not found");
-  const values = sheet.getLastRow() > 0 ? sheet.getDataRange().getValues() : [["Customer ID", "Customer Name", "Sdt", "Email", "Dia chi", "San pham", "Gia tien", "Trang thai gan", "Trang thai", "Ma vd", "Note", "Chewing status", "Start date", "End date", "Duration days", "Video date", "Status", "Sidebar blocks json", "Link", "Token", "Created at", "Updated at", "App title", "App slogan"]];
-  const headers = values[0].map(h => String(h || "").toLowerCase().trim().replace(/\s+/g, '_'));
-  const rowData = headers.map(h => {
-    let val = payload[h] || "";
-    if (h.includes('start') || h.includes('end')) { 
-      const k = toDateKey_Global(val); 
-      if (k) {
-        let p = k.split('-');
-        val = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
-      }
+    
+    if (pNewRows.length > 0) {
+       pSheet.clear().getRange(1, 1, pNewRows.length, pHeaders.length).setValues(pNewRows);
     }
-    return (typeof val === 'object' && !(val instanceof Date)) ? JSON.stringify(val) : val;
-  });
-  const idIdx = headers.indexOf('customer_id');
-  let rowIndex = -1;
-  if (idIdx > -1) {
-    for (let i = 1; i < values.length; i++) if (String(values[i][idIdx]) === String(payload.customer_id)) { rowIndex = i + 1; break; }
   }
-  if (rowIndex > 0) sheet.getRange(rowIndex, 1, 1, headers.length).setValues([rowData]); else sheet.appendRow(rowData);
-  return { success: true, customer_id: payload.customer_id };
+  
+  return { success: true, customer_id: payload.customer_id, payload };
 }
 
-function savePlan(ss, id, tasks) {
-  const sheet = ss.getSheetByName(PLAN_SHEET_NAME);
-  if (!sheet) throw new Error("Plan sheet not found");
-  const values = sheet.getLastRow() > 0 ? sheet.getDataRange().getValues() : [["Customer ID", "Day", "Type", "Title", "Detail", "Link", "Is Deleted"]];
-  const newRows = [values[0], ...values.slice(1).filter(r => String(r[0]) !== String(id))];
-  tasks.forEach(t => newRows.push([id, t.day, t.type, t.title, t.detail, t.link, t.is_deleted ? 1 : 0]));
-  sheet.clearContents().getRange(1, 1, newRows.length, 7).setValues(newRows);
-  return { success: true };
+function renderStudentPage(u, t) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const customerRaw = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME).find(c => String(c.customer_id) === String(u));
+    if (!customerRaw || String(customerRaw.token) !== String(t)) {
+      return HtmlService.createHtmlOutput("<div style='font-family:sans-serif; text-align:center; padding-top:100px;'><h1>TRUY CẬP BỊ TỪ CHỐI</h1></div>");
+    }
+    
+    const serverData = getServerData(u, t);
+    const template = HtmlService.createTemplateFromFile('StudentPage');
+    
+    template.customer = {
+      name: customerRaw.customer_name,
+      app_title: customerRaw.app_title || "PHÁC ĐỒ 30 NGÀY THAY ĐỔI KHUÔN MẶT",
+      app_slogan: customerRaw.app_slogan || "Hành trình đánh thức vẻ đẹp tự nhiên, gìn giữ thanh xuân.",
+      start: customerRaw.start_date,
+      end: customerRaw.end_date,
+      note: String(customerRaw.note || ""),
+      chewing: customerRaw.chewing_status || "",
+      access_state: serverData.state,
+      allowed_day: serverData.allowed_day,
+      expire_warning: serverData.expire_warning,
+      blocks: serverData.sidebar_blocks,
+      tasks: serverData.tasks
+    };
+    template.params = { u: u, t: t };
+    
+    return template.evaluate()
+      .setTitle("Phác đồ Yoga Face - " + customerRaw.customer_name)
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+  } catch (e) { return HtmlService.createHtmlOutput("<h1>Lỗi: " + e.toString() + "</h1>"); }
 }
 
-function saveProducts(ss, p) {
-  const sheet = ss.getSheetByName(PRODUCT_SHEET_NAME);
-  if (!sheet) throw new Error("Product sheet not found");
-  const rows = [["ID_SP", "Ten_SP", "Gia_Nhap", "Gia_Ban", "Trang_Thai"], ...p.map(x => [x.id_sp, x.ten_sp, x.gia_nhap, x.gia_ban, x.trang_thai])];
-  sheet.clearContents().getRange(1, 1, rows.length, 5).setValues(rows);
-  return { success: true };
-}
-
-function deleteCustomerById(ss, id) {
-  const sheet = ss.getSheetByName(CUSTOMER_SHEET_NAME);
-  const values = sheet.getDataRange().getValues();
-  const headers = values[0].map(h => String(h || "").toLowerCase().trim().replace(/\s+/g, '_'));
-  const idIdx = headers.indexOf('customer_id');
-  const sIdx = headers.indexOf('status');
-  if (idIdx > -1 && sIdx > -1) {
-    for (let i = 1; i < values.length; i++) if (String(values[i][idIdx]) === String(id)) { sheet.getRange(i + 1, sIdx + 1).setValue("DELETED"); return { success: true }; }
-  }
-  return { success: false };
-}
-
-function diagnoseMasterPlans(ss) {
-  const s = ss.getSheetByName(MASTER_SHEET_NAME);
-  return { success: true, masterSheetFound: !!s, lastRow: s ? s.getLastRow() : 0, allSheets: ss.getSheets().map(x => x.getName()) };
+function getServerData(u, t) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const c = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME).find(x => String(x.customer_id) === String(u));
+  if (!c) return { ok: false };
+  
+  const acc = calculateAccessState(c);
+  const state = acc.state;
+  const allowed = acc.allowed_day;
+  
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = toDate_Global(c.end_date);
+  
+  let blocks = [];
+  try { if (c.sidebar_blocks_json) blocks = JSON.parse(c.sidebar_blocks_json); } catch (e) {}
+  
+  const isExpiringSoon = state === "ACTIVE" && end && ((end.getTime() - today.getTime()) / 86400000) <= 5;
+  
+  return { 
+    ok: true, 
+    tasks: getPlanData(ss, u, c.video_date), 
+    state: state, 
+    allowed_day: allowed, 
+    expire_warning: isExpiringSoon,
+    sidebar_blocks: blocks,
+    start_date: c.start_date,
+    end_date: c.end_date,
+    app_title: c.app_title,
+    app_slogan: c.app_slogan,
+    note: c.note
+  };
 }

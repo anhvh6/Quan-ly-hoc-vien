@@ -13,35 +13,25 @@ const normalize = (s: any) => String(s ?? '')
 
 /**
  * Kiểm tra xem học viên có ở trạng thái "chưa gán" hay không.
- * Giờ đây ưu tiên kiểm tra giá trị số 0 (Trang_thai).
+ * Quy ước: Trang_thai = "0" là chưa gán.
  */
 export function isChuaGan(input: any): boolean {
-  const checkValue = (val: any): boolean => {
-    // 0 là trạng thái chưa gán chính thức
-    if (val === 0 || val === '0') return true;
-    
-    // Fallback cho dữ liệu cũ hoặc boolean
-    if (val === false || String(val).toLowerCase() === 'false') return true;
-    
-    const s = normalize(val);
-    return s.includes('chua gan');
-  };
-
   if (typeof input === 'object' && input !== null) {
     // Ưu tiên kiểm tra trường trang_thai (số 0/1)
-    if (input.trang_thai !== undefined && (input.trang_thai === 0 || input.trang_thai === '0')) return true;
-    if (input.trang_thai !== undefined && (input.trang_thai === 1 || input.trang_thai === '1')) return false;
+    const val = String(input.trang_thai ?? '');
+    if (val === '0') return true;
+    if (val === '1') return false;
 
-    // Các trường dự phòng khác
-    return (
-      checkValue(input.trang_thai_gan) || 
-      checkValue(input.status_gan) ||
-      checkValue(input.trangthai) ||
-      checkValue(input.trang_thai_khoa_hoc) ||
-      checkValue(input.assignment_status)
-    );
+    // Dự phòng cho trang_thai_gan nếu trang_thai null/undefined
+    const s = normalize(input.trang_thai_gan);
+    if (s.includes('chua gan')) return true;
+    if (s.includes('da gan')) return false;
+    
+    return false;
   }
-  return checkValue(input);
+  
+  const s = String(input ?? '');
+  return s === '0' || normalize(s).includes('chua gan');
 }
 
 /**

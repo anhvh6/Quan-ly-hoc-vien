@@ -17,6 +17,13 @@ export const COLORS = {
 
 export const DEFAULT_SIDEBAR_BLOCKS: SidebarBlock[] = [
   {
+    id: 'sb_chat_1',
+    title: 'Xây dựng thực đơn chuẩn',
+    content: 'Bật mic và loa để kết nối trực tiếp cùng chuyên gia Quốc tế của MeGa Phương 🌿 Chúng tôi sẽ đồng hành cùng bạn xây dựng thực đơn ăn uống hằng ngày phù hợp với thể trạng.',
+    type: 'dark',
+    is_chat: true
+  },
+  {
     id: 'sb_1',
     title: 'Hướng dẫn nằm nghiêng "ĐÚNG + CHUẨN"',
     content: 'Nếu cậu có thói quen nằm nghiêng, hãy dành chút thời gian xem video này. Nó sẽ giúp cậu nhìn việc nằm nghiêng theo một góc hoàn toàn khác, đặc biệt hữu ích nếu cậu chỉ ngủ được khi nằm nghiêng.',

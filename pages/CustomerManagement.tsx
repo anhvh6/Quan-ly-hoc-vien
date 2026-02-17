@@ -13,9 +13,30 @@ import { Customer, Product, CustomerStatus } from '../types';
 import { calcRevenueCostProfit, isChuaGan } from '../utils/finance';
 import { toVnZeroHour, getDiffDays, formatDDMM, formatDDMMYYYY, toInputDateString, toISODateKey, parseVNDate } from '../utils/date';
 
-const getCustomerNamePillColor = (customer: Customer): string => {
-  if (!customer.video_date) return 'bg-orange-100 text-orange-700 border-orange-200';
-  if (isChuaGan(customer)) return 'bg-green-100 text-green-700 border-green-200';
+const getCustomerCategory = (c: Customer, products: Product[]): 'orange' | 'green' | 'gray' | 'brown' | null => {
+  const fin = calcRevenueCostProfit(c, products);
+  const isUnassigned = String(c.trang_thai ?? '') === '0';
+  const isAssigned = String(c.trang_thai ?? '') === '1';
+  const emailEmpty = !c.email || String(c.email).trim() === '';
+  const addressEmpty = !c.dia_chi || String(c.dia_chi).trim() === '';
+  const mvdEmpty = !c.ma_vd || String(c.ma_vd).trim() === '';
+  const hasCost = (fin.revenue - fin.profit) !== 0;
+
+  if (isUnassigned && emailEmpty) return 'orange';
+  if (isUnassigned && !emailEmpty) return 'green';
+  if (isAssigned && addressEmpty && hasCost) return 'gray';
+  if (isAssigned && mvdEmpty && !addressEmpty && hasCost) return 'brown';
+  
+  return null;
+};
+
+const getCustomerNamePillColor = (customer: Customer, products: Product[]): string => {
+  const category = getCustomerCategory(customer, products);
+  if (category === 'orange') return 'bg-orange-100 text-orange-700 border-orange-200';
+  if (category === 'green') return 'bg-green-100 text-green-700 border-green-200';
+  if (category === 'gray') return 'bg-slate-200 text-slate-700 border-slate-300';
+  if (category === 'brown') return 'bg-amber-100 text-amber-900 border-amber-200';
+  if (!customer.video_date) return 'bg-red-50 text-red-700 border-red-100';
   return 'bg-blue-100 text-blue-700 border-blue-200';
 };
 
@@ -30,14 +51,6 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
   const [formData, setFormData] = useState<Partial<Customer>>({});
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dateFrom, setDateToFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [filterMissing, setFilterMissing] = useState<string | null>(null);
-
-  const editPanelRef = useRef<HTMLDivElement>(null);
-  const productDropdownRef = useRef<HTMLDivElement>(null);
-
   const getDefaultDateRange = () => {
     const today = new Date();
     const day = today.getDate();
@@ -54,17 +67,24 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
     return { from: toISODateKey(fromDate), to: toISODateKey(toDate) };
   };
 
+  const initialDates = getDefaultDateRange();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFrom, setDateToFrom] = useState(initialDates.from);
+  const [dateTo, setDateTo] = useState(initialDates.to);
+  const [filterMissing, setFilterMissing] = useState<string | null>(null);
+
+  const editPanelRef = useRef<HTMLDivElement>(null);
+  const productDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
+    const defaults = getDefaultDateRange();
+    setDateToFrom(defaults.from);
+    setDateTo(defaults.to);
+    
     if (initialId) {
-      setDateToFrom("");
-      setDateTo("");
       setSearchTerm("");
       setFilterMissing(null);
       setLastViewedId(initialId);
-    } else {
-      const defaults = getDefaultDateRange();
-      setDateToFrom(defaults.from);
-      setDateTo(defaults.to);
     }
   }, [initialId]);
 
@@ -108,18 +128,6 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
     }
   }, [expandedId, lastViewedId, loading]);
 
-  useEffect(() => {
-    const handleClickOutsideProduct = (event: MouseEvent) => {
-      if (productDropdownRef.current && !productDropdownRef.current.contains(event.target as Node)) {
-        setShowProductDropdown(false);
-      }
-    };
-    if (showProductDropdown) {
-      document.addEventListener("mousedown", handleClickOutsideProduct);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutsideProduct);
-  }, [showProductDropdown]);
-
   const handleRowClick = (customer: Customer) => {
     setFormData({ ...customer });
     setExpandedId(customer.customer_id);
@@ -135,11 +143,11 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
       dia_chi: '',
       ma_vd: '',
       trang_thai_gan: 'Chưa gán',
+      trang_thai: 0,
       start_date: toISODateKey(new Date()),
       duration_days: 62,
       san_pham: [],
       gia_tien: 0,
-      trang_thai: 0,
       status: CustomerStatus.ACTIVE
     });
     setExpandedId('NEW');
@@ -260,11 +268,12 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
   const baseFiltered = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return customers.filter(c => {
+      if (c.status !== CustomerStatus.ACTIVE) return false;
+
       const matchSearch = String(c.customer_name || "").toLowerCase().includes(term) || 
                           String(c.ma_vd || "").toLowerCase().includes(term) ||
                           String(c.sdt || "").includes(searchTerm);
       
-      if (!dateFrom && !dateTo) return matchSearch;
       const createdAtISO = toISODateKey(c.created_at);
       const matchDate = (!dateFrom || createdAtISO >= dateFrom) && (!dateTo || createdAtISO <= dateTo);
       return matchSearch && matchDate;
@@ -290,7 +299,7 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
     return {
       total: baseFiltered.length,
       notAssigned: baseFiltered.filter(c => isChuaGan(c)).length,
-      missingMVD: baseFiltered.filter(c => !c.ma_vd).length,
+      missingMVD: baseFiltered.filter(c => (c.san_pham && c.san_pham.length > 0) && (!c.ma_vd || String(c.ma_vd).trim() === "")).length,
       noPlan: baseFiltered.filter(c => !c.video_date).length,
       profit: totalProfit
     };
@@ -299,46 +308,47 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
   const colorStats = useMemo(() => {
     const s = { orange: 0, green: 0, gray: 0, brown: 0 };
     baseFiltered.forEach(c => {
-      const isNotAssigned = isChuaGan(c);
-      const fin = studentFinances.get(c.customer_id);
-      const hasVon = fin?.hasVon || false;
-      const hasEmail = !!c.email && String(c.email).trim() !== "";
-      const hasAddress = !!c.dia_chi && String(c.dia_chi).trim() !== "";
-      const hasMvd = !!c.ma_vd && String(c.ma_vd).trim() !== "";
-      if (isNotAssigned && !hasEmail) s.orange++;
-      else if (isNotAssigned && hasEmail) s.green++;
-      else if (!isNotAssigned && c.trang_thai === 1 && hasVon && !hasAddress) s.gray++;
-      else if (!isNotAssigned && c.trang_thai === 1 && hasVon && hasAddress && !hasMvd) s.brown++;
+      const category = getCustomerCategory(c, products);
+      if (category === 'orange') s.orange++;
+      else if (category === 'green') s.green++;
+      else if (category === 'gray') s.gray++;
+      else if (category === 'brown') s.brown++;
     });
     return s;
-  }, [baseFiltered, studentFinances]);
+  }, [baseFiltered, products]);
 
   const filteredCustomers = useMemo(() => {
     return baseFiltered.filter(c => {
-      if (!filterMissing) return true;
-      const isNotAssigned = isChuaGan(c);
-      if (filterMissing === 'chua_gan') return isNotAssigned;
-      if (filterMissing === 'phac_do') return !c.video_date;
+      if (!filterMissing || filterMissing === 'all') return true;
+      const category = getCustomerCategory(c, products);
+      
+      // Lọc theo màu sắc (Status preset)
+      if (filterMissing === 'color_orange') return category === 'orange';
+      if (filterMissing === 'color_green') return category === 'green';
+      if (filterMissing === 'color_gray') return category === 'gray';
+      if (filterMissing === 'color_brown') return category === 'brown';
+      
+      // Lọc theo tiêu chí chi tiết (Dropdown)
+      if (filterMissing === 'chua_gan') return isChuaGan(c);
+      if (filterMissing === 'phac_do') return !c.video_date || String(c.video_date).trim() === "";
       if (filterMissing === 'email') return !c.email || String(c.email).trim() === "";
       if (filterMissing === 'sdt') return !c.sdt || String(c.sdt).trim() === "";
       if (filterMissing === 'dia_chi') return !c.dia_chi || String(c.dia_chi).trim() === "";
       if (filterMissing === 'ma_vd') return !c.ma_vd || String(c.ma_vd).trim() === "";
-      if (filterMissing === 'dc_no_mvd') return !!c.dia_chi && (!c.ma_vd || String(c.ma_vd).trim() === "");
-      if (filterMissing === 'mail_no_gan') return !!c.email && isNotAssigned;
-
-      const fin = studentFinances.get(c.customer_id);
-      const hasVon = fin?.hasVon || false;
-      const hasEmail = !!c.email && String(c.email).trim() !== "";
-      const hasAddress = !!c.dia_chi && String(c.dia_chi).trim() !== "";
-      const hasMvd = !!c.ma_vd && String(c.ma_vd).trim() !== "";
-
-      if (filterMissing === 'color_orange') return isNotAssigned && !hasEmail;
-      if (filterMissing === 'color_green') return isNotAssigned && hasEmail;
-      if (filterMissing === 'color_gray') return !isNotAssigned && c.trang_thai === 1 && hasVon && !hasAddress;
-      if (filterMissing === 'color_brown') return !isNotAssigned && c.trang_thai === 1 && hasVon && hasAddress && !hasMvd;
+      
+      // Có ĐC - Chưa có MVĐ
+      if (filterMissing === 'co_dc_chua_mvd') {
+        return (c.dia_chi && String(c.dia_chi).trim() !== "") && (!c.ma_vd || String(c.ma_vd).trim() === "");
+      }
+      
+      // Có Mail - Chưa gán
+      if (filterMissing === 'co_mail_chua_gan') {
+        return (c.email && String(c.email).trim() !== "") && isChuaGan(c);
+      }
+      
       return true;
     }).sort((a, b) => (parseVNDate(b.start_date)?.getTime() || 0) - (parseVNDate(a.start_date)?.getTime() || 0));
-  }, [baseFiltered, filterMissing, studentFinances]);
+  }, [baseFiltered, filterMissing, products]);
 
   const renderEditModal = () => {
     if (!expandedId) return null;
@@ -382,12 +392,12 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                   
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">TRẠNG THÁI GÁN</label>
-                    <select className="line-input font-bold text-blue-900" value={formData.trang_thai_gan} onChange={e => setFormData({...formData, trang_thai_gan: e.target.value})}>
-                      <option value="Chưa gán">Chưa gán</option>
-                      <option value="Đã gán">Đã gán</option>
+                    <select className="line-input font-bold text-blue-900" value={formData.trang_thai} onChange={e => setFormData({...formData, trang_thai: parseInt(e.target.value) || 0, trang_thai_gan: parseInt(e.target.value) === 1 ? 'Đã gán' : 'Chưa gán'})}>
+                      <option value={0}>Chưa gán (0)</option>
+                      <option value={1}>Đã gán (1)</option>
                     </select>
                   </div>
-                  <LineInput label="NGÀY B bắt đầu" name="start_date" type="date" value={formData.start_date} onChange={e => setFormData({...formData, start_date: e.target.value})} />
+                  <LineInput label="NGÀY Bắt đầu" name="start_date" type="date" value={formData.start_date} onChange={e => setFormData({...formData, start_date: e.target.value})} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-x-8 gap-y-6">
@@ -458,9 +468,6 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                                 <Plus size={14} className="text-blue-200 group-hover:text-blue-600" />
                               </div>
                             ))}
-                            {products.filter(p => p.trang_thai === 1).length === 0 && (
-                              <div className="p-4 text-center text-xs text-gray-400 italic">Hết hàng...</div>
-                            )}
                          </div>
                        </div>
                      )}
@@ -492,11 +499,6 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                           </div>
                         </div>
                       ))}
-                      {(formData.san_pham || []).length === 0 && (
-                        <div className="py-12 text-center text-gray-300 italic text-sm">
-                          Chưa có sản phẩm nào được thêm...
-                        </div>
-                      )}
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -521,7 +523,7 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
 
   return (
     <Layout 
-      title="HỆ THỐNG QUẢ LÝ HỌC VIÊN"
+      title="HỆ THỐNG QUẢN LÝ HỌC VIÊN"
       actions={
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={() => onNavigate('plan-editor')}><Plus size={14} className="mr-1.5" /> THÊM PĐ</Button>
@@ -533,7 +535,7 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
       <div className="flex flex-col gap-10 pb-20">
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-x-3 gap-y-3 items-center px-1">
-             <button className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === null ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing(null)}><Users size={16} /><span className="text-[12px] font-black uppercase tracking-tight">{stats.total} HỌC VIÊN</span></button>
+             <button className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === null || filterMissing === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing(null)}><Users size={16} /><span className="text-[12px] font-black uppercase tracking-tight">{stats.total} HỌC VIÊN</span></button>
              <button className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === 'chua_gan' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-orange-500 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing('chua_gan')}><AlertCircle size={16} /><span className="text-[12px] font-black uppercase tracking-tight">{stats.notAssigned} CHƯA GÁN</span></button>
              <button className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === 'ma_vd' ? 'bg-purple-500 text-white border-purple-500' : 'bg-white text-purple-500 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing('ma_vd')}><Gift size={16} /><span className="text-[12px] font-black uppercase tracking-tight">{stats.missingMVD} THIẾU MVD</span></button>
              <button className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === 'phac_do' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-red-500 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing('phac_do')}><ClipboardList size={16} /><span className="text-[12px] font-black uppercase tracking-tight">{stats.noPlan} THIẾU PĐ</span></button>
@@ -541,10 +543,10 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
           </div>
           
           <div className="flex flex-wrap gap-x-6 gap-y-2 px-1">
-             <button onClick={() => setFilterMissing(prev => prev === 'color_orange' ? null : 'color_orange')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_orange' ? 'bg-orange-50 ring-1 ring-orange-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div><span className="text-[10px] font-black text-orange-600 uppercase tracking-tight">CHƯA GÁN-MAIL: <span className="text-gray-900 ml-1">{colorStats.orange}</span></span></button>
-             <button onClick={() => setFilterMissing(prev => prev === 'color_green' ? null : 'color_green')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_green' ? 'bg-green-50 ring-1 ring-green-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div><span className="text-[10px] font-black text-green-700 uppercase tracking-tight">CHƯA GÁN+MAIL: <span className="text-gray-900 ml-1">{colorStats.green}</span></span></button>
-             <button onClick={() => setFilterMissing(prev => prev === 'color_gray' ? null : 'color_gray')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_gray' ? 'bg-slate-50 ring-1 ring-slate-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-slate-400"></div><span className="text-[10px] font-black text-slate-600 uppercase tracking-tight">GÁN-ĐC: <span className="text-gray-900 ml-1">{colorStats.gray}</span></span></button>
-             <button onClick={() => setFilterMissing(prev => prev === 'color_brown' ? null : 'color_brown')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_brown' ? 'bg-amber-50 ring-1 ring-amber-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-amber-800"></div><span className="text-[10px] font-black text-amber-800 uppercase tracking-tight">GÁN-MVD: <span className="text-gray-900 ml-1">{colorStats.brown}</span></span></button>
+             <button onClick={() => setFilterMissing(prev => prev === 'color_orange' ? null : 'color_orange')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_orange' ? 'bg-orange-50 ring-1 ring-orange-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div><span className="text-[10px] font-black text-orange-600 uppercase tracking-tight">CHƯA GÁN - MAIL: <span className="text-gray-900 ml-1">{colorStats.orange}</span></span></button>
+             <button onClick={() => setFilterMissing(prev => prev === 'color_green' ? null : 'color_green')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_green' ? 'bg-green-50 ring-1 ring-green-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div><span className="text-[10px] font-black text-green-700 uppercase tracking-tight">CHƯA GÁN + MAIL: <span className="text-gray-900 ml-1">{colorStats.green}</span></span></button>
+             <button onClick={() => setFilterMissing(prev => prev === 'color_gray' ? null : 'color_gray')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_gray' ? 'bg-slate-50 ring-1 ring-slate-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-slate-400"></div><span className="text-[10px] font-black text-slate-600 uppercase tracking-tight">GÁN - ĐC (VỐN): <span className="text-gray-900 ml-1">{colorStats.gray}</span></span></button>
+             <button onClick={() => setFilterMissing(prev => prev === 'color_brown' ? null : 'color_brown')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_brown' ? 'bg-amber-50 ring-1 ring-amber-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-amber-800"></div><span className="text-[10px] font-black text-amber-800 uppercase tracking-tight">GÁN - MVD (ĐC): <span className="text-gray-900 ml-1">{colorStats.brown}</span></span></button>
           </div>
         </div>
 
@@ -558,24 +560,47 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
               onChange={(e) => setSearchTerm(e.target.value)} 
             />
           </div>
-          <div className="flex flex-wrap gap-4 w-full lg:w-auto">
-            <div className="flex-1 min-w-[130px]"><LineInput placeholder={`Từ (${formatDDMM(dateFrom)})`} type="date" value={dateFrom} onChange={e => setDateToFrom(e.target.value)} /></div>
-            <div className="flex-1 min-w-[130px]"><LineInput placeholder={`Đến (${formatDDMM(dateTo)})`} type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} /></div>
-            <div className="flex-1 min-w-[200px]">
-              <div className="flex flex-col">
-                <select className="line-input text-blue-900 font-bold bg-transparent" value={filterMissing || ""} onChange={e => setFilterMissing(e.target.value || null)}>
-                  <option value="">-- Tất cả tiêu chí --</option>
+          <div className="flex flex-wrap gap-4 w-full lg:w-auto items-center">
+            <div className="flex-1 min-w-[130px]">
+              <LineInput 
+                label="Từ ngày"
+                type="date" 
+                value={dateFrom} 
+                onChange={e => setDateToFrom(e.target.value)} 
+              />
+            </div>
+            <div className="flex-1 min-w-[130px]">
+              <LineInput 
+                label="Đến ngày"
+                type="date" 
+                value={dateTo} 
+                onChange={e => setDateTo(e.target.value)} 
+              />
+            </div>
+            
+            {/* Bộ lọc tiêu chí - Dropdown */}
+            <div className="flex flex-col gap-1 min-w-[220px]">
+              <label className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Tiêu chí lọc</label>
+              <div className="relative group">
+                <select 
+                  className="w-full bg-transparent border-b-2 border-blue-50 py-2.5 text-sm font-bold text-blue-900 outline-none focus:border-blue-500 transition-colors appearance-none pr-8 cursor-pointer"
+                  value={filterMissing || 'all'}
+                  onChange={(e) => setFilterMissing(e.target.value)}
+                >
+                  <option value="all">-- Tất cả tiêu chí --</option>
                   <option value="chua_gan">Chưa gán</option>
                   <option value="phac_do">Thiếu Phác đồ</option>
                   <option value="email">Thiếu Email</option>
                   <option value="sdt">Thiếu Số điện thoại</option>
                   <option value="dia_chi">Thiếu Địa chỉ</option>
                   <option value="ma_vd">Thiếu Mã vận đơn</option>
-                  <option value="dc_no_mvd">Có ĐC – Chưa có MVĐ</option>
-                  <option value="mail_no_gan">Có Mail – Chưa gán</option>
+                  <option value="co_dc_chua_mvd">Có ĐC – Chưa có MVĐ</option>
+                  <option value="co_mail_chua_gan">Có Mail – Chưa gán</option>
                 </select>
+                <ChevronDown size={14} className="absolute right-1 top-1/2 -translate-y-1/2 text-blue-300 pointer-events-none group-focus-within:rotate-180 transition-transform" />
               </div>
             </div>
+
             <button 
               onClick={() => { 
                 setSearchTerm(""); 
@@ -584,7 +609,8 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                 setDateTo(def.to); 
                 setFilterMissing(null); 
               }} 
-              className="p-3 text-gray-400 hover:text-red-500 transition-all flex items-center gap-2 active:scale-95"
+              className="p-3 mt-4 text-gray-300 hover:text-red-500 transition-all flex items-center gap-2 active:scale-95"
+              title="Xóa bộ lọc"
             >
               <Eraser size={20} />
             </button>
@@ -626,7 +652,7 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                       <td className="p-5 text-xs font-black text-blue-900">{formatDDMM(c.start_date)}</td>
                       <td className="p-5">
                         <div className="flex flex-col gap-1.5 items-start">
-                          <div className={`px-4 py-1.5 rounded-full text-[12px] font-black border uppercase tracking-tight shadow-sm ${getCustomerNamePillColor(c)}`}>
+                          <div className={`px-4 py-1.5 rounded-full text-[12px] font-black border uppercase tracking-tight shadow-sm ${getCustomerNamePillColor(c, products)}`}>
                             {c.customer_name}
                           </div>
                           <div className="text-[10px] text-gray-400 font-bold ml-2">
@@ -663,9 +689,6 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                     </tr>
                   );
                 })}
-                {!loading && filteredCustomers.length === 0 && (
-                  <tr><td colSpan={8} className="p-32 text-center text-gray-400 italic font-medium">Hệ thống chưa ghi nhận học viên nào phù hợp...</td></tr>
-                )}
               </tbody>
             </table>
           </div>
