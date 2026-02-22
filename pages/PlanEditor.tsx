@@ -353,9 +353,9 @@ export const PlanEditor: React.FC<{ onNavigate: (page: string, params?: any) => 
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col gap-10 pb-20">
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 sm:gap-10 pb-20">
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            <Card className="flex flex-col gap-6 p-6 sm:p-8">
               <h3 className="text-sm font-bold text-blue-900 uppercase tracking-widest flex items-center gap-2"><Info size={16} /> Thông tin cá nhân</h3>
               <div className="flex flex-col gap-6">
                  <LineInput label="Tên học viên" placeholder="VÍ DỤ: NGUYỄN THỊ MAI" icon={isEditMode ? <Lock size={14} /> : undefined} value={customer.customer_name} onChange={e => !isEditMode && setCustomer({...customer, customer_name: e.target.value.toUpperCase()})} readOnly={isEditMode} className={isEditMode ? "opacity-60 grayscale cursor-not-allowed" : ""} />
@@ -382,7 +382,7 @@ export const PlanEditor: React.FC<{ onNavigate: (page: string, params?: any) => 
               </div>
             </Card>
             
-            <Card className="flex flex-col gap-6">
+            <Card className="flex flex-col gap-6 p-6 sm:p-8">
               <h3 className="text-sm font-bold text-blue-900 uppercase tracking-widest flex items-center gap-2"><Info size={16} /> Phân tích chuyên sâu</h3>
               <div className="flex flex-col gap-2">
                 <label onClick={() => setIsChewingModalOpen(true)} className="text-[11px] font-bold text-blue-600 uppercase tracking-widest cursor-pointer hover:text-blue-800 flex items-center gap-1.5">Ăn nhai cân bằng <Maximize2 size={10} /></label>
@@ -412,11 +412,11 @@ export const PlanEditor: React.FC<{ onNavigate: (page: string, params?: any) => 
           </section>
 
           <section>
-             <div className="flex items-center justify-between mb-8 px-1">
+             <div className="flex flex-col sm:flex-row items-center justify-between mb-8 px-1 gap-4">
                <h3 className="text-[13px] font-black text-blue-900 uppercase tracking-[0.15em] flex items-center gap-2">KHỐI THÔNG TIN BỔ TRỢ (SIDEBAR)</h3>
-               <Button variant="secondary" size="sm" onClick={addSidebarBlock} className="rounded-full shadow-lg shadow-blue-100"><Plus size={16} className="mr-2"/> THÊM KHỐI</Button>
+               <Button variant="secondary" size="sm" onClick={addSidebarBlock} className="w-full sm:w-auto rounded-full shadow-lg shadow-blue-100"><Plus size={16} className="mr-2"/> THÊM KHỐI</Button>
              </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 {(customer.sidebar_blocks_json || []).map((block, idx) => (
                   <Card key={block.id} className={`relative flex flex-col group transition-all duration-500 ${block.type === 'dark' ? 'bg-[#1E3A8A] border-transparent shadow-xl' : 'bg-white border-blue-100 hover:border-blue-300'} p-7 rounded-[2.5rem] min-h-[300px]`}>
                     
@@ -465,29 +465,29 @@ export const PlanEditor: React.FC<{ onNavigate: (page: string, params?: any) => 
              </div>
           </section>
 
-          <section className="bg-white rounded-[2.5rem] p-10 border border-blue-50 shadow-sm">
-            <div className="flex items-center justify-between mb-10 px-2">
+          <section className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-blue-50 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-10 px-2 gap-4">
               <h3 className="text-[14px] font-black text-blue-900 uppercase tracking-[0.2em] flex items-center gap-2">
                 LỊCH TRÌNH CHI TIẾT 
                 <span className={`text-[10px] px-3 py-1 rounded-full border ${isCustomized ? 'bg-orange-100 text-orange-600 border-orange-200' : 'bg-green-100 text-green-600 border-green-200'}`}>
                   {isCustomized ? 'ĐÃ TÙY CHỈNH RIÊNG' : 'ĐANG THEO NHÓM VIDEO'}
                 </span>
               </h3>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3 w-full sm:w-auto justify-center sm:justify-end">
                 {isCustomized && (
-                  <Button variant="outline" size="sm" onClick={clearCustomization} className="rounded-full">
+                  <Button variant="outline" size="sm" onClick={clearCustomization} className="flex-1 sm:flex-none rounded-full">
                     <RefreshCw size={14} className="mr-2" /> XÓA TÙY CHỈNH
                   </Button>
                 )}
-                <Button variant="secondary" size="sm" onClick={() => { setIsCustomized(true); setTasks([...tasks, { day: (tasks.length > 0 ? Math.max(...tasks.map(x=>x.day)) : 1), type: ExerciseType.MANDATORY, title: "", detail: "", link: "", is_deleted: false }]); }} className="rounded-full">
+                <Button variant="secondary" size="sm" onClick={() => { setIsCustomized(true); setTasks([...tasks, { day: (tasks.length > 0 ? Math.max(...tasks.map(x=>x.day)) : 1), type: ExerciseType.MANDATORY, title: "", detail: "", link: "", is_deleted: false }]); }} className="flex-1 sm:flex-none rounded-full">
                   <Plus size={16} className="mr-2"/> THÊM BÀI TẬP
                 </Button>
               </div>
             </div>
 
             <div className="bg-white rounded-3xl border border-blue-50 overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
+              <div className="overflow-x-auto scrollbar-hide">
+                <table className="w-full text-left min-w-[700px]">
                   <thead>
                     <tr className="bg-blue-50/50">
                       <th className="p-4 pl-8 text-[10px] font-black text-blue-700 uppercase tracking-widest w-20 text-center">NGÀY</th>

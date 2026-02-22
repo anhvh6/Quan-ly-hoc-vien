@@ -116,23 +116,30 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, products, onEdit,
   return (
     <div 
       onClick={handleCardClick}
-      className={`relative flex items-center gap-4 p-4 ${cardGradientClass} border ${cardBorderClass} rounded-[1.5rem] transition-all hover:shadow-xl hover:-translate-y-1 group cursor-pointer shadow-sm overflow-hidden`}
+      className={`relative flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-4 ${cardGradientClass} border ${cardBorderClass} rounded-[1.5rem] transition-all hover:shadow-xl hover:-translate-y-1 group cursor-pointer shadow-sm overflow-hidden`}
     >
       <div className="absolute inset-0 bg-white/40 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-      <div 
-        onClick={(e) => { e.stopPropagation(); onDetail(customer.customer_id); }}
-        className={`relative z-10 w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center ${iconBgClass} ${iconColorClass} shadow-inner transition-transform group-hover:scale-105 active:scale-95`}
-        title="Quản lý chi tiết học viên"
-      >
-        <StatusIcon size={26} strokeWidth={1.5} />
-      </div>
-      <div className="relative z-10 flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-4 w-full sm:w-auto">
+        <div 
+          onClick={(e) => { e.stopPropagation(); onDetail(customer.customer_id); }}
+          className={`relative z-10 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex-shrink-0 flex items-center justify-center ${iconBgClass} ${iconColorClass} shadow-inner transition-transform group-hover:scale-105 active:scale-95`}
+          title="Quản lý chi tiết học viên"
+        >
+          <StatusIcon size={24} strokeWidth={1.5} />
+        </div>
+        <div className="relative z-10 flex-1 min-w-0 sm:hidden">
           <h4 className="text-[14px] font-extrabold text-[#1E3A8A] truncate uppercase tracking-tight">
             {customer.customer_name}
           </h4>
         </div>
-        <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
+      </div>
+      <div className="relative z-10 flex-1 min-w-0 w-full">
+        <div className="hidden sm:flex items-center gap-2 mb-1">
+          <h4 className="text-[14px] font-extrabold text-[#1E3A8A] truncate uppercase tracking-tight">
+            {customer.customer_name}
+          </h4>
+        </div>
+        <div className="flex items-center flex-wrap gap-x-2 sm:gap-x-3 gap-y-1">
           <div className="flex items-center gap-1.5 bg-white/60 px-2 py-0.5 rounded-lg border border-white/50 shadow-sm">
             <Calendar size={11} className="text-blue-400" />
             <span className="text-[10px] text-gray-500 font-bold">{formattedStart}</span>
@@ -152,14 +159,14 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, products, onEdit,
           )}
         </div>
       </div>
-      <div className="relative z-10 flex items-center gap-1.5 ml-2">
+      <div className="relative z-10 flex items-center gap-1.5 ml-auto sm:ml-2 mt-2 sm:mt-0">
         {hasPlan && customer.status !== CustomerStatus.DELETED && (
           <>
-            <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(customer.link); alert("Đã copy link phác đồ!"); }} className="w-9 h-9 flex items-center justify-center text-blue-600 bg-white hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm border border-blue-50 active:scale-90"><Copy size={16} /></button>
-            <button onClick={(e) => { e.stopPropagation(); onDuplicate(customer.customer_id); }} className="w-9 h-9 flex items-center justify-center text-orange-600 bg-white hover:bg-orange-600 hover:text-white rounded-xl transition-all shadow-sm border border-orange-50 active:scale-90"><CopyPlus size={16} /></button>
+            <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(customer.link); alert("Đã copy link phác đồ!"); }} className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-blue-600 bg-white hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm border border-blue-50 active:scale-90"><Copy size={14} /></button>
+            <button onClick={(e) => { e.stopPropagation(); onDuplicate(customer.customer_id); }} className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-orange-600 bg-white hover:bg-orange-600 hover:text-white rounded-xl transition-all shadow-sm border border-orange-50 active:scale-90"><CopyPlus size={14} /></button>
           </>
         )}
-        <button onClick={(e) => { e.stopPropagation(); onEdit(customer.customer_id); }} className="w-9 h-9 flex items-center justify-center text-green-600 bg-white hover:bg-green-600 hover:text-white rounded-xl transition-all shadow-sm border border-green-50 active:scale-90"><Edit2 size={16} /></button>
+        <button onClick={(e) => { e.stopPropagation(); onEdit(customer.customer_id); }} className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-green-600 bg-white hover:bg-green-600 hover:text-white rounded-xl transition-all shadow-sm border border-green-50 active:scale-90"><Edit2 size={14} /></button>
       </div>
     </div>
   );
@@ -365,20 +372,20 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
         </div>
       }
     >
-      <div className="flex flex-col gap-6 pb-20">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap gap-x-8 gap-y-2 text-[11px] font-black uppercase tracking-widest text-blue-900 px-1 py-1">
-             <div className="flex items-center gap-2"><Zap size={14} className="text-orange-500" /> {summaryStats.new} Mới tạo</div>
-             <div className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> {summaryStats.active} Hoạt động</div>
-             <div className="flex items-center gap-2"><AlertTriangle size={14} className="text-orange-400" /> {summaryStats.expiring} Sắp hết hạn</div>
-             <div className="flex items-center gap-2"><Clock size={14} className="text-blue-500" /> {summaryStats.total} Tổng học viên</div>
+      <div className="flex flex-col gap-4 sm:gap-6 pb-20">
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-x-8 sm:gap-y-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-blue-900 px-1 py-1">
+             <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-blue-50 sm:border-none sm:p-0"><Zap size={14} className="text-orange-500" /> {summaryStats.new} Mới</div>
+             <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-blue-50 sm:border-none sm:p-0"><CheckCircle size={14} className="text-green-500" /> {summaryStats.active} Hoạt động</div>
+             <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-blue-50 sm:border-none sm:p-0"><AlertTriangle size={14} className="text-orange-400" /> {summaryStats.expiring} Sắp hết hạn</div>
+             <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-blue-50 sm:border-none sm:p-0"><Clock size={14} className="text-blue-500" /> {summaryStats.total} Tổng</div>
           </div>
           
-          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1 px-1 items-center">
-             <button onClick={() => setColorFilter(colorFilter === 'orange' ? null : 'orange')} className={`group flex items-center gap-2 transition-all p-2 px-3 rounded-xl border ${colorFilter === 'orange' ? 'bg-orange-50 border-orange-200 shadow-sm scale-105' : 'bg-transparent border-transparent opacity-70 hover:opacity-100 hover:bg-gray-50'}`}><div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div><span className={`text-[10px] font-black uppercase tracking-tight ${colorFilter === 'orange' ? 'text-orange-700' : 'text-orange-600'}`}>Chưa gán - Mail<span className="text-black ml-1">:{colorStats.orange}</span></span></button>
-             <button onClick={() => setColorFilter(colorFilter === 'green' ? null : 'green')} className={`group flex items-center gap-2 transition-all p-2 px-3 rounded-xl border ${colorFilter === 'green' ? 'bg-green-50 border-green-200 shadow-sm scale-105' : 'bg-transparent border-transparent opacity-70 hover:opacity-100 hover:bg-gray-50'}`}><div className="w-2.5 h-2.5 rounded-full bg-green-600"></div><span className={`text-[10px] font-black uppercase tracking-tight ${colorFilter === 'green' ? 'text-green-800' : 'text-green-700'}`}>Chưa gán + Mail<span className="text-black ml-1">:{colorStats.green}</span></span></button>
-             <button onClick={() => setColorFilter(colorFilter === 'gray' ? null : 'gray')} className={`group flex items-center gap-2 transition-all p-2 px-3 rounded-xl border ${colorFilter === 'gray' ? 'bg-slate-100 border-slate-300 shadow-sm scale-105' : 'bg-transparent border-transparent opacity-70 hover:opacity-100 hover:bg-gray-50'}`}><div className="w-2.5 h-2.5 rounded-full bg-[#4B5563]"></div><span className={`text-[10px] font-black uppercase tracking-tight ${colorFilter === 'gray' ? 'text-slate-900' : 'text-slate-600'}`}>Gán - Địa chỉ (Có vốn)<span className="text-black ml-1">:{colorStats.gray}</span></span></button>
-             <button onClick={() => setColorFilter(colorFilter === 'brown' ? null : 'brown')} className={`group flex items-center gap-2 transition-all p-2 px-3 rounded-xl border ${colorFilter === 'brown' ? 'bg-amber-100 border-amber-300 shadow-sm scale-105' : 'bg-transparent border-transparent opacity-70 hover:opacity-100 hover:bg-gray-50'}`}><div className="w-2.5 h-2.5 rounded-full bg-[#8B4513]"></div><span className={`text-[10px] font-black uppercase tracking-tight ${colorFilter === 'brown' ? 'text-amber-950' : 'text-amber-800'}`}>Gán - MVĐ (Có ĐC+Vốn)<span className="text-black ml-1">:{colorStats.brown}</span></span></button>
+          <div className="flex overflow-x-auto gap-3 sm:gap-x-4 sm:gap-y-2 mt-1 px-1 items-center scrollbar-hide pb-2 sm:pb-0">
+             <button onClick={() => setColorFilter(colorFilter === 'orange' ? null : 'orange')} className={`shrink-0 group flex items-center gap-2 transition-all p-2 px-3 rounded-xl border ${colorFilter === 'orange' ? 'bg-orange-50 border-orange-200 shadow-sm scale-105' : 'bg-white border-blue-50 sm:bg-transparent sm:border-transparent opacity-70 hover:opacity-100 hover:bg-gray-50'}`}><div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div><span className={`text-[10px] font-black uppercase tracking-tight ${colorFilter === 'orange' ? 'text-orange-700' : 'text-orange-600'}`}>Chưa gán - Mail<span className="text-black ml-1">:{colorStats.orange}</span></span></button>
+             <button onClick={() => setColorFilter(colorFilter === 'green' ? null : 'green')} className={`shrink-0 group flex items-center gap-2 transition-all p-2 px-3 rounded-xl border ${colorFilter === 'green' ? 'bg-green-50 border-green-200 shadow-sm scale-105' : 'bg-white border-blue-50 sm:bg-transparent sm:border-transparent opacity-70 hover:opacity-100 hover:bg-gray-50'}`}><div className="w-2.5 h-2.5 rounded-full bg-green-600"></div><span className={`text-[10px] font-black uppercase tracking-tight ${colorFilter === 'green' ? 'text-green-800' : 'text-green-700'}`}>Chưa gán + Mail<span className="text-black ml-1">:{colorStats.green}</span></span></button>
+             <button onClick={() => setColorFilter(colorFilter === 'gray' ? null : 'gray')} className={`shrink-0 group flex items-center gap-2 transition-all p-2 px-3 rounded-xl border ${colorFilter === 'gray' ? 'bg-slate-100 border-slate-300 shadow-sm scale-105' : 'bg-white border-blue-50 sm:bg-transparent sm:border-transparent opacity-70 hover:opacity-100 hover:bg-gray-50'}`}><div className="w-2.5 h-2.5 rounded-full bg-[#4B5563]"></div><span className={`text-[10px] font-black uppercase tracking-tight ${colorFilter === 'gray' ? 'text-slate-900' : 'text-slate-600'}`}>Gán - ĐC (Vốn)<span className="text-black ml-1">:{colorStats.gray}</span></span></button>
+             <button onClick={() => setColorFilter(colorFilter === 'brown' ? null : 'brown')} className={`shrink-0 group flex items-center gap-2 transition-all p-2 px-3 rounded-xl border ${colorFilter === 'brown' ? 'bg-amber-100 border-amber-300 shadow-sm scale-105' : 'bg-white border-blue-50 sm:bg-transparent sm:border-transparent opacity-70 hover:opacity-100 hover:bg-gray-50'}`}><div className="w-2.5 h-2.5 rounded-full bg-[#8B4513]"></div><span className={`text-[10px] font-black uppercase tracking-tight ${colorFilter === 'brown' ? 'text-amber-950' : 'text-amber-800'}`}>Gán - MVĐ (ĐC)<span className="text-black ml-1">:{colorStats.brown}</span></span></button>
           </div>
         </div>
 
@@ -392,8 +399,8 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
               onChange={(e) => setSearchTerm(e.target.value)} 
             />
           </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <div className="flex-1 md:w-40">
+          <div className="grid grid-cols-2 sm:flex gap-4 w-full md:w-auto">
+            <div className="w-full sm:w-40">
               <LineInput 
                 label="Từ ngày"
                 type="date" 
@@ -401,7 +408,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
                 onChange={e => setDateToFrom(e.target.value)} 
               />
             </div>
-            <div className="flex-1 md:w-40">
+            <div className="w-full sm:w-40">
               <LineInput 
                 label="Đến ngày"
                 type="date" 
@@ -409,19 +416,21 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
                 onChange={e => setDateTo(e.target.value)} 
               />
             </div>
-            <button 
-              onClick={() => { 
-                setSearchTerm(""); 
-                const def = getDefaultDateRange();
-                setDateToFrom(def.from); 
-                setDateTo(def.to); 
-                setColorFilter(null); 
-              }} 
-              className="p-2 text-gray-400 hover:text-red-500 transition-all active:scale-90" 
-              title="Xóa bộ lọc"
-            >
-              <Eraser size={20} />
-            </button>
+            <div className="col-span-2 flex justify-end sm:block">
+              <button 
+                onClick={() => { 
+                  setSearchTerm(""); 
+                  const def = getDefaultDateRange();
+                  setDateToFrom(def.from); 
+                  setDateTo(def.to); 
+                  setColorFilter(null); 
+                }} 
+                className="p-2 text-gray-400 hover:text-red-500 transition-all active:scale-90 bg-gray-50 sm:bg-transparent rounded-xl" 
+                title="Xóa bộ lọc"
+              >
+                <Eraser size={20} />
+              </button>
+            </div>
           </div>
         </div>
 

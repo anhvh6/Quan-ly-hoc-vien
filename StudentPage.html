@@ -20,8 +20,104 @@
         --grad-blue: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
       }
       * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-      body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--brand-soft); color: var(--brand-text); margin: 0; padding: 0; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+      html, body { height: 100%; margin: 0; padding: 0; }
+      body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--brand-soft); color: var(--brand-text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+      
       .container { max-width: 1200px; margin: 0 auto; padding: 40px 16px 120px; }
+      
+      /* CHAT OVERLAY - SỬA LỖI CĂN GIỮA & FULL HEIGHT */
+      .chat-overlay { 
+        position: fixed; 
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100% !important;
+        height: 100% !important;
+        background: #000000 !important; 
+        z-index: 99999; 
+        display: none; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        overflow: hidden;
+      }
+      .chat-overlay.show { display: flex; }
+      
+      .chat-header { 
+        position: absolute; 
+        top: 0; left: 0; right: 0; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        z-index: 100001; 
+        padding: 20px 24px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+      }
+      
+      .chat-status-pill { 
+        display: flex; 
+        align-items: center; 
+        gap: 12px; 
+        background: rgba(0,0,0,0.6); 
+        backdrop-filter: blur(20px); 
+        padding: 14px 22px; 
+        border-radius: 50px; 
+        color: white; 
+        font-size: 10px; 
+        font-weight: 900; 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em; 
+        border: 1px solid rgba(59, 130, 246, 0.6); 
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); 
+        animation: neonPulse 2s infinite ease-in-out;
+        max-width: 80%;
+        text-align: center;
+        line-height: 1.4;
+      }
+      
+      @keyframes neonPulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(59, 130, 246, 0.3); border-color: rgba(59, 130, 246, 0.4); }
+        50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(59, 130, 246, 0.7); border-color: rgba(59, 130, 246, 1); }
+      }
+      
+      .chat-close { 
+        width: 50px; height: 50px; 
+        border-radius: 50%; 
+        background: rgba(255,255,255,0.15); 
+        border: 1px solid rgba(255,255,255,0.2); 
+        color: white; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        cursor: pointer; 
+        backdrop-filter: blur(10px);
+        font-size: 22px;
+        transition: all 0.3s;
+      }
+      .chat-close:hover { background: rgba(255,0,0,0.5); transform: rotate(90deg); }
+      
+      /* FORCE CENTER THE EXPERT FRAME */
+      .chat-iframe-container { 
+        position: relative;
+        width: 100% !important; 
+        height: 100% !important; 
+        display: flex !important; 
+        align-items: center !important; 
+        justify-content: center !important; 
+        background: #000 !important;
+        overflow: hidden !important;
+      }
+      .chat-iframe { 
+        height: 100dvh !important; 
+        height: 100vh !important; /* Fallback */
+        width: 177.78dvh !important; /* 16:9 ratio based on height */
+        width: 177.78vh !important; /* Fallback */
+        max-width: none !important;
+        border: none !important;
+        display: block !important;
+        margin: 0 auto !important;
+        box-shadow: 0 0 100px rgba(0,0,0,1);
+      }
+
+      /* Các style khác giữ nguyên */
       header { text-align: center; margin-bottom: 50px; }
       header h1 { font-size: 30px; font-weight: 900; color: var(--brand-deep); margin: 0 0 12px; text-transform: uppercase; letter-spacing: -0.02em; line-height: 1.2; }
       header p { color: var(--brand-light-blue); font-style: italic; font-size: 15px; margin: 0 0 28px; opacity: 0.8; max-width: 600px; margin-left: auto; margin-right: auto; }
@@ -63,15 +159,9 @@
       .modal-header { padding: 28px 32px; border-bottom: 1px solid #f1f5f9; background: #f8fbff; }
       .modal-body { padding: 32px; font-size: 16px; line-height: 1.8; white-space: pre-line; text-align: justify; max-height: 55vh; overflow-y: auto; color: #334155; font-weight: 500; }
       .modal-footer { padding: 28px 32px; }
-      .chat-overlay { position: fixed; inset: 0; background: black; z-index: 50000; display: none; flex-direction: column; }
-      .chat-overlay.show { display: flex; }
-      .chat-header { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; z-index: 50002; padding: 20px; }
-      .chat-close { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(10px); }
-      .chat-iframe { width: 100%; height: 100%; border: none; }
       .zalo-float { position: fixed; bottom: 30px; right: 30px; width: 64px; height: 64px; background: #0068ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 35px rgba(0,104,255,0.4); z-index: 5000; border: 4px solid white; transition: transform 0.3s; }
       .refresh-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--brand-deep); color: white; padding: 10px 24px; border-radius: 50px; font-size: 11px; font-weight: 800; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; z-index: 20000; text-transform: uppercase; letter-spacing: 0.05em; }
       @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
       .blocked-screen { position: fixed; inset: 0; background: #f8fbff; z-index: 30000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
       .hidden-on-collapse { display: none; }
       body.expanded .hidden-on-collapse { display: block; }
@@ -80,17 +170,22 @@
 <body id="app-body">
     <div id="silent-refresh-toast" class="refresh-toast">🔄 Đang đồng bộ dữ liệu mới nhất...</div>
 
+    <!-- IMPROVED CHAT OVERLAY - TUYỆT ĐỐI CĂN GIỮA & FULL HEIGHT -->
     <div id="chat-overlay" class="chat-overlay">
        <div class="chat-header">
-          <div style="display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.5); padding:8px 16px; border-radius:12px; color:white; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; border:1px solid rgba(255,255,255,0.1);">
-             <div style="width:8px; height:8px; background:#10B981; border-radius:50%; animation:pulse 1s infinite;"></div> Chuyên gia Quốc tế đang online
+          <div class="chat-status-pill">
+             <div style="width:10px; height:10px; background:#10B981; border-radius:50%; box-shadow: 0 0 15px #10B981; animation: ping 1.5s infinite;"></div>
+             Hãy chọn Vietnameses và Chat Now để bắt đầu trao đổi sau 30s nhé!
           </div>
           <button class="chat-close" onclick="closeChat()">✕</button>
        </div>
-       <iframe id="chat-frame" class="chat-iframe" allow="microphone; camera; autoplay; display-capture"></iframe>
+       <div class="chat-iframe-container">
+         <!-- Force !important height/width via direct style attribute to avoid browser override -->
+         <iframe id="chat-frame" class="chat-iframe" style="height:100dvh !important; width:177.78dvh !important; max-width:none !important;" allow="microphone; camera; autoplay; display-capture"></iframe>
+       </div>
     </div>
 
-    <!-- Màn hình chặn luôn ở trong DOM nhưng ẩn bằng style display nếu state là ACTIVE -->
+    <!-- App Content Area -->
     <div id="blocked-screen" class="blocked-screen" style="display: <?= (customer.access_state === 'DELETED' || customer.access_state === 'EXPIRED') ? 'flex' : 'none' ?>;">
         <div id="blocked-icon" style="font-size: 60px; margin-bottom: 24px;"><?= customer.access_state === "DELETED" ? '🔒' : '⌛' ?></div>
         <h2 id="blocked-title" style="font-size: 24px; font-weight: 900; color: var(--brand-deep); margin-bottom: 16px; text-transform: uppercase;">
@@ -156,7 +251,6 @@
         </div>
     </div>
 
-    <!-- Modals -->
     <div id="app-modal" class="modal" onclick="if(event.target==this) closeModal()">
         <div class="modal-inner">
             <div class="modal-header">
@@ -226,7 +320,6 @@
       }
 
       function showTask(day, idx) {
-        // Chỉ chạy cập nhật dữ liệu khi người dùng ấn vào các bài tập đang hoạt động và có ngày chia hết cho 3
         if (day <= DATA.allowed_day && day % 3 === 0) {
           runSilentRefresh();
         }
@@ -245,7 +338,7 @@
           
           const footer = document.getElementById('modal-footer');
           if (task.link) {
-            footer.innerHTML = `<button class="btn-primary" onclick="window.open('${task.link}','_blank')">▶ XEM VIDEO HƯỚNG DẪN</button>`;
+            footer.innerHTML = `<button class="btn-primary" onclick="window.open('${task.link}','_blank')">▶ XEM HƯỚNG DẪN BÀI TẬP</button>`;
           } else {
             footer.innerHTML = `<button class="btn-primary" onclick="closeModal()">ĐÓNG</button>`;
           }
@@ -293,7 +386,7 @@
       function toggleExpand() {
         isExpanded = !isExpanded;
         document.body.classList.toggle('expanded', isExpanded);
-        document.getElementById('toggle-btn').innerText = isExpanded ? "Thu gọn phác đồ" : "Xem toàn bộ 30 ngày";
+        document.getElementById('toggle-btn').innerText = isExpanded ? "Thu gọn phác đồ" : "Xem tất cả 30 ngày";
       }
 
       function runSilentRefresh(onComplete) {
@@ -314,7 +407,6 @@
             DATA.app_slogan = res.app_slogan;
             DATA.note = res.note;
             
-            // Xử lý hiển thị/ẩn màn hình chặn
             const blockedScreen = document.getElementById('blocked-screen');
             if (blockedScreen) {
               if (res.state === 'ACTIVE' || res.state === 'NOT_STARTED') {
@@ -355,14 +447,10 @@
       window.onload = function() {
         renderHeader();
         renderGrid();
-        
-        // Chạy đồng bộ lần đầu để lấy allowed_day chính xác
         runSilentRefresh(function() {
-          // Sau khi đồng bộ, kiểm tra xem có cần mở rộng phác đồ không
           if (DATA.allowed_day > 10) {
             toggleExpand();
           }
-          // Ưu tiên hiển thị đúng vị trí ngày học hiện tại
           scrollToActive();
         });
       };

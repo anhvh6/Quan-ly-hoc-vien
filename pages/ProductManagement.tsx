@@ -13,7 +13,7 @@ export const ProductManagement: React.FC<{ onNavigate: (page: string) => void }>
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       try {
         const data = await api.getProducts();
         setProducts(data);
@@ -23,7 +23,7 @@ export const ProductManagement: React.FC<{ onNavigate: (page: string) => void }>
         setLoading(false);
       }
     };
-    fetch();
+    fetchData();
   }, []);
 
   const handleSave = async () => {

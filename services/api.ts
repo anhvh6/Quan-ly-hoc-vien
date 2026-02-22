@@ -3,7 +3,7 @@ import { Customer, Product, ExerciseTask, CustomerStatus, ExerciseType } from '.
 import { DEFAULT_SIDEBAR_BLOCKS } from '../constants';
 import { toISODateKey } from '../utils/date';
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxa6EuNJQdzDeSD-nS9PK06AchRJdcXC8Xp13ipY-R-AgdrBQQfU5tvTCmu3zOdE9PJ_g/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzfaJaIjP6R57A3wgKFGfx_-H4YNGoRfvNzS8oOs1J2kQDx3vPb3UHLEeXVeCH0tvA-XQ/exec";
 
 const normalizeCustomer = (item: any): Customer => {
   if (!item) return item;
@@ -38,6 +38,10 @@ const normalizeCustomer = (item: any): Customer => {
 };
 
 const request = async (params: any, method: 'GET' | 'POST' = 'GET'): Promise<any> => {
+  if (typeof fetch === 'undefined') {
+    throw new Error("FETCH_NOT_AVAILABLE: The 'fetch' API is not available in this environment.");
+  }
+
   const url = new URL(API_URL);
   const options: RequestInit = { 
     method,
@@ -56,13 +60,24 @@ const request = async (params: any, method: 'GET' | 'POST' = 'GET'): Promise<any
   
   try {
     const response = await fetch(url.toString(), options);
+    if (!response.ok) {
+      throw new Error(`HTTP_ERROR: ${response.status} ${response.statusText}`);
+    }
     const text = await response.text();
     let result;
-    try { result = JSON.parse(text); } catch (e) { throw new Error("INVALID_RESPONSE"); }
-    if (!result.success) throw new Error(result.error || "API Error");
+    try { 
+      result = JSON.parse(text); 
+    } catch (e) { 
+      console.error("Raw response text:", text);
+      throw new Error("INVALID_JSON_RESPONSE"); 
+    }
+    if (!result.success) throw new Error(result.error || "API_LOGIC_ERROR");
     return result.data;
   } catch (error: any) {
-    console.error("API Request Error:", error);
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      console.error("CORS or Network Error: Failed to fetch. Please ensure the Google Apps Script is deployed as 'Anyone' and the URL is correct.");
+    }
+    console.error("API Request Detail:", { url: url.toString(), method, error });
     throw error;
   }
 };

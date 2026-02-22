@@ -368,23 +368,23 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
           className="w-full max-w-6xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-8 border-b border-blue-50 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200"><User size={24} /></div>
+          <div className="p-6 sm:p-8 border-b border-blue-50 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200"><User size={20} /></div>
               <div>
-                <h4 className="font-extrabold text-[#1E3A8A] uppercase text-lg tracking-tight">
+                <h4 className="font-extrabold text-[#1E3A8A] uppercase text-base sm:text-lg tracking-tight">
                   {isNew ? "THÊM HỌC VIÊN MỚI" : `SỬA HỌC VIÊN: ${customer.customer_name}`}
                 </h4>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{isNew ? "TẠO BẢN GHI MỚI" : `ID: ${customer.customer_id}`}</p>
+                <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest">{isNew ? "TẠO BẢN GHI MỚI" : `ID: ${customer.customer_id}`}</p>
               </div>
             </div>
-            <button onClick={() => { setExpandedId(null); setShowProductDropdown(false); }} className="p-3 text-gray-300 hover:text-red-500 transition-all hover:bg-red-50 rounded-full"><X size={28} /></button>
+            <button onClick={() => { setExpandedId(null); setShowProductDropdown(false); }} className="p-2 sm:p-3 text-gray-300 hover:text-red-500 transition-all hover:bg-red-50 rounded-full"><X size={24} /></button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-              <div className="flex flex-col gap-8">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+          <div className="flex-1 overflow-y-auto p-6 sm:p-10 custom-scrollbar">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-16">
+              <div className="flex flex-col gap-6 sm:gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
                   <LineInput label="TÊN HỌC VIÊN" name="customer_name" icon={<User size={14} />} value={formData.customer_name} onChange={e => setFormData({...formData, customer_name: e.target.value.toUpperCase()})} />
                   <LineInput label="SỐ ĐIỆN THOẠI" name="sdt" icon={<Phone size={14} />} value={formData.sdt} onChange={e => setFormData({...formData, sdt: e.target.value})} />
                   <LineInput label="EMAIL" name="email" icon={<Mail size={14} />} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
@@ -400,7 +400,7 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                   <LineInput label="NGÀY Bắt đầu" name="start_date" type="date" value={formData.start_date} onChange={e => setFormData({...formData, start_date: e.target.value})} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
                   <LineInput label="ĐỊA CHỈ NHẬN HÀNG" name="dia_chi" isTextArea className="h-24" value={formData.dia_chi} onChange={e => setFormData({...formData, dia_chi: e.target.value})} />
                   <div className="flex flex-col gap-6">
                      <LineInput label="SỐ NGÀY TẬP" name="duration_days" type="number" value={formData.duration_days} onChange={e => setFormData({...formData, duration_days: parseInt(e.target.value) || 0})} />
@@ -449,7 +449,7 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                      </button>
                      
                      {showProductDropdown && (
-                       <div className="absolute right-0 top-12 w-80 bg-white border border-blue-50 rounded-2xl shadow-2xl z-[6000] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                       <div className="absolute right-0 top-12 w-72 sm:w-80 bg-white border border-blue-50 rounded-2xl shadow-2xl z-[6000] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                          <div className="p-4 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
                             <span className="text-[11px] font-black text-blue-900 uppercase">Danh sách sản phẩm</span>
                             <button onClick={() => setShowProductDropdown(false)}><X size={14} className="text-blue-400" /></button>
@@ -480,7 +480,7 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                         <div key={item.id_sp} className="flex items-center justify-between group">
                           <div className="flex-1">
                             <div className="text-[12px] font-black text-blue-900 uppercase">{item.ten_sp}</div>
-                            <div className="flex items-center gap-4 mt-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1">
                               <span className="text-[11px] font-bold text-gray-400">SL: <input type="number" className="w-8 bg-transparent outline-none font-bold text-blue-600 border-b border-blue-50 focus:border-blue-400" value={item.so_luong} onChange={e => updateProductQty(item.id_sp, parseInt(e.target.value) || 0)} /></span>
                               <span className="text-[11px] font-bold text-gray-400 flex items-center gap-1">
                                 GIÁ: 
@@ -493,9 +493,9 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-3 sm:gap-6">
                              <span className="text-sm font-black text-blue-600">{formatVND(item.thanh_tien)}</span>
-                             <button onClick={() => toggleProduct(products.find(p => p.id_sp === item.id_sp)!)} className="text-red-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
+                             <button onClick={() => toggleProduct(products.find(p => p.id_sp === item.id_sp)!)} className="text-red-200 hover:text-red-500 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
                           </div>
                         </div>
                       ))}
@@ -504,7 +504,7 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">TỔNG THANH TOÁN</span>
-                        <span className="text-2xl font-black text-blue-600">{formatVND(formData.gia_tien || 0)}</span>
+                        <span className="text-xl sm:text-2xl font-black text-blue-600">{formatVND(formData.gia_tien || 0)}</span>
                       </div>
                     </div>
                  </div>
@@ -512,9 +512,9 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
             </div>
           </div>
 
-          <div className="p-8 bg-blue-50/50 border-t border-blue-50 flex justify-end gap-4 shrink-0">
-            <button onClick={() => { setExpandedId(null); setShowProductDropdown(false); }} className="px-10 py-4 bg-white text-gray-400 font-bold rounded-2xl text-[12px] uppercase tracking-widest hover:bg-gray-100 transition-all border border-blue-100">ĐÓNG</button>
-            <Button variant="primary" className="px-16 py-4" onClick={handleSave} disabled={isSaving}>{isSaving ? "ĐANG LƯU..." : isNew ? "THÊM HỌC VIÊN" : "LƯU THAY ĐỔI"}</Button>
+          <div className="p-6 sm:p-8 bg-blue-50/50 border-t border-blue-50 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 shrink-0">
+            <button onClick={() => { setExpandedId(null); setShowProductDropdown(false); }} className="w-full sm:w-auto px-10 py-3 sm:py-4 bg-white text-gray-400 font-bold rounded-2xl text-[12px] uppercase tracking-widest hover:bg-gray-100 transition-all border border-blue-100">ĐÓNG</button>
+            <Button variant="primary" className="w-full sm:w-auto px-16 py-3 sm:py-4" onClick={handleSave} disabled={isSaving}>{isSaving ? "ĐANG LƯU..." : isNew ? "THÊM HỌC VIÊN" : "LƯU THAY ĐỔI"}</Button>
           </div>
         </div>
       </div>
@@ -532,21 +532,21 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
         </div>
       }
     >
-      <div className="flex flex-col gap-10 pb-20">
+      <div className="flex flex-col gap-6 sm:gap-10 pb-20">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap gap-x-3 gap-y-3 items-center px-1">
-             <button className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === null || filterMissing === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing(null)}><Users size={16} /><span className="text-[12px] font-black uppercase tracking-tight">{stats.total} HỌC VIÊN</span></button>
-             <button className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === 'chua_gan' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-orange-500 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing('chua_gan')}><AlertCircle size={16} /><span className="text-[12px] font-black uppercase tracking-tight">{stats.notAssigned} CHƯA GÁN</span></button>
-             <button className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === 'ma_vd' ? 'bg-purple-500 text-white border-purple-500' : 'bg-white text-purple-500 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing('ma_vd')}><Gift size={16} /><span className="text-[12px] font-black uppercase tracking-tight">{stats.missingMVD} THIẾU MVD</span></button>
-             <button className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === 'phac_do' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-red-500 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing('phac_do')}><ClipboardList size={16} /><span className="text-[12px] font-black uppercase tracking-tight">{stats.noPlan} THIẾU PĐ</span></button>
-             <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-green-200 text-green-600 bg-white/50 shadow-sm"><TrendingUp size={16} /><span className="text-[12px] font-black uppercase tracking-tight">+{formatVND(stats.profit)}</span></div>
+          <div className="flex overflow-x-auto gap-3 items-center px-1 scrollbar-hide pb-2 sm:pb-0">
+             <button className={`shrink-0 flex items-center gap-2.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === null || filterMissing === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing(null)}><Users size={16} /><span className="text-[11px] sm:text-[12px] font-black uppercase tracking-tight">{stats.total} HV</span></button>
+             <button className={`shrink-0 flex items-center gap-2.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === 'chua_gan' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-orange-500 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing('chua_gan')}><AlertCircle size={16} /><span className="text-[11px] sm:text-[12px] font-black uppercase tracking-tight">{stats.notAssigned} CHƯA GÁN</span></button>
+             <button className={`shrink-0 flex items-center gap-2.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === 'ma_vd' ? 'bg-purple-500 text-white border-purple-500' : 'bg-white text-purple-500 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing('ma_vd')}><Gift size={16} /><span className="text-[11px] sm:text-[12px] font-black uppercase tracking-tight">{stats.missingMVD} THIẾU MVD</span></button>
+             <button className={`shrink-0 flex items-center gap-2.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border transition-all shadow-sm ${filterMissing === 'phac_do' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-red-500 border-blue-100 hover:bg-blue-50'}`} onClick={() => setFilterMissing('phac_do')}><ClipboardList size={16} /><span className="text-[11px] sm:text-[12px] font-black uppercase tracking-tight">{stats.noPlan} THIẾU PĐ</span></button>
+             <div className="shrink-0 flex items-center gap-2.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-green-200 text-green-600 bg-white/50 shadow-sm"><TrendingUp size={16} /><span className="text-[11px] sm:text-[12px] font-black uppercase tracking-tight">+{formatVND(stats.profit)}</span></div>
           </div>
           
-          <div className="flex flex-wrap gap-x-6 gap-y-2 px-1">
-             <button onClick={() => setFilterMissing(prev => prev === 'color_orange' ? null : 'color_orange')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_orange' ? 'bg-orange-50 ring-1 ring-orange-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div><span className="text-[10px] font-black text-orange-600 uppercase tracking-tight">CHƯA GÁN - MAIL: <span className="text-gray-900 ml-1">{colorStats.orange}</span></span></button>
-             <button onClick={() => setFilterMissing(prev => prev === 'color_green' ? null : 'color_green')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_green' ? 'bg-green-50 ring-1 ring-green-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div><span className="text-[10px] font-black text-green-700 uppercase tracking-tight">CHƯA GÁN + MAIL: <span className="text-gray-900 ml-1">{colorStats.green}</span></span></button>
-             <button onClick={() => setFilterMissing(prev => prev === 'color_gray' ? null : 'color_gray')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_gray' ? 'bg-slate-50 ring-1 ring-slate-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-slate-400"></div><span className="text-[10px] font-black text-slate-600 uppercase tracking-tight">GÁN - ĐC (VỐN): <span className="text-gray-900 ml-1">{colorStats.gray}</span></span></button>
-             <button onClick={() => setFilterMissing(prev => prev === 'color_brown' ? null : 'color_brown')} className={`flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_brown' ? 'bg-amber-50 ring-1 ring-amber-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-amber-800"></div><span className="text-[10px] font-black text-amber-800 uppercase tracking-tight">GÁN - MVD (ĐC): <span className="text-gray-900 ml-1">{colorStats.brown}</span></span></button>
+          <div className="flex overflow-x-auto gap-4 px-1 scrollbar-hide pb-2 sm:pb-0">
+             <button onClick={() => setFilterMissing(prev => prev === 'color_orange' ? null : 'color_orange')} className={`shrink-0 flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_orange' ? 'bg-orange-50 ring-1 ring-orange-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div><span className="text-[10px] font-black text-orange-600 uppercase tracking-tight">CHƯA GÁN - MAIL: <span className="text-gray-900 ml-1">{colorStats.orange}</span></span></button>
+             <button onClick={() => setFilterMissing(prev => prev === 'color_green' ? null : 'color_green')} className={`shrink-0 flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_green' ? 'bg-green-50 ring-1 ring-green-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div><span className="text-[10px] font-black text-green-700 uppercase tracking-tight">CHƯA GÁN + MAIL: <span className="text-gray-900 ml-1">{colorStats.green}</span></span></button>
+             <button onClick={() => setFilterMissing(prev => prev === 'color_gray' ? null : 'color_gray')} className={`shrink-0 flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_gray' ? 'bg-slate-50 ring-1 ring-slate-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-slate-400"></div><span className="text-[10px] font-black text-slate-600 uppercase tracking-tight">GÁN - ĐC (VỐN): <span className="text-gray-900 ml-1">{colorStats.gray}</span></span></button>
+             <button onClick={() => setFilterMissing(prev => prev === 'color_brown' ? null : 'color_brown')} className={`shrink-0 flex items-center gap-2 transition-all p-2 rounded-xl hover:bg-gray-50 ${filterMissing === 'color_brown' ? 'bg-amber-50 ring-1 ring-amber-200' : ''}`}><div className="w-2.5 h-2.5 rounded-full bg-amber-800"></div><span className="text-[10px] font-black text-amber-800 uppercase tracking-tight">GÁN - MVD (ĐC): <span className="text-gray-900 ml-1">{colorStats.brown}</span></span></button>
           </div>
         </div>
 
@@ -560,8 +560,8 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
               onChange={(e) => setSearchTerm(e.target.value)} 
             />
           </div>
-          <div className="flex flex-wrap gap-4 w-full lg:w-auto items-center">
-            <div className="flex-1 min-w-[130px]">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 w-full lg:w-auto items-center">
+            <div className="w-full sm:w-32 lg:w-40">
               <LineInput 
                 label="Từ ngày"
                 type="date" 
@@ -569,7 +569,7 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                 onChange={e => setDateToFrom(e.target.value)} 
               />
             </div>
-            <div className="flex-1 min-w-[130px]">
+            <div className="w-full sm:w-32 lg:w-40">
               <LineInput 
                 label="Đến ngày"
                 type="date" 
@@ -578,8 +578,7 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
               />
             </div>
             
-            {/* Bộ lọc tiêu chí - Dropdown */}
-            <div className="flex flex-col gap-1 min-w-[220px]">
+            <div className="col-span-2 sm:col-span-1 flex flex-col gap-1 min-w-full sm:min-w-[200px]">
               <label className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Tiêu chí lọc</label>
               <div className="relative group">
                 <select 
@@ -601,19 +600,21 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
               </div>
             </div>
 
-            <button 
-              onClick={() => { 
-                setSearchTerm(""); 
-                const def = getDefaultDateRange(); 
-                setDateToFrom(def.from); 
-                setDateTo(def.to); 
-                setFilterMissing(null); 
-              }} 
-              className="p-3 mt-4 text-gray-300 hover:text-red-500 transition-all flex items-center gap-2 active:scale-95"
-              title="Xóa bộ lọc"
-            >
-              <Eraser size={20} />
-            </button>
+            <div className="col-span-2 sm:col-span-1 flex justify-end">
+              <button 
+                onClick={() => { 
+                  setSearchTerm(""); 
+                  const def = getDefaultDateRange(); 
+                  setDateToFrom(def.from); 
+                  setDateTo(def.to); 
+                  setFilterMissing(null); 
+                }} 
+                className="p-3 text-gray-300 hover:text-red-500 transition-all flex items-center gap-2 active:scale-95 bg-gray-50 sm:bg-transparent rounded-xl"
+                title="Xóa bộ lọc"
+              >
+                <Eraser size={20} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -622,14 +623,14 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
             <table className="w-full text-left border-separate border-spacing-0">
               <thead>
                 <tr>
-                  <th className="sticky top-0 z-40 bg-[#1E3A8A] text-white p-5 text-[10px] font-black uppercase w-16 text-center border-b border-blue-800">STT</th>
-                  <th className="sticky top-0 z-40 bg-[#1E3A8A] text-white p-5 text-[10px] font-black uppercase w-24 border-b border-blue-800">NGÀY BĐ</th>
-                  <th className="sticky top-0 z-40 bg-[#1E3A8A] text-white p-5 text-[10px] font-black uppercase min-w-[200px] border-b border-blue-800">HỌC VIÊN</th>
-                  <th className="sticky top-0 z-40 bg-[#1E3A8A] text-white p-5 text-[10px] font-black uppercase w-24 text-center border-b border-blue-800">NGÀY HỌC</th>
-                  <th className="sticky top-0 z-40 bg-[#1E3A8A] text-white p-5 text-[10px] font-black uppercase border-b border-blue-800">SẢN PHẨM</th>
-                  <th className="sticky top-0 z-40 bg-[#1E3A8A] text-white p-5 text-[10px] font-black uppercase w-40 text-center border-b border-blue-800">CÔNG CỤ</th>
-                  <th className="sticky top-0 z-40 bg-[#1E3A8A] text-white p-5 text-[10px] font-black uppercase text-right w-32 border-b border-blue-800">TỔNG TIỀN</th>
-                  <th className="sticky top-0 z-40 bg-[#1E3A8A] text-white p-5 text-[10px] font-black uppercase text-right w-32 border-b border-blue-800">LỢI NHUẬN</th>
+                  <th className="p-4 text-[10px] font-black uppercase text-center w-12">#</th>
+                  <th className="p-4 text-[10px] font-black uppercase w-24">Bắt đầu</th>
+                  <th className="p-4 text-[10px] font-black uppercase min-w-[200px]">Học viên</th>
+                  <th className="p-4 text-[10px] font-black uppercase w-20 text-center">Ngày</th>
+                  <th className="p-4 text-[10px] font-black uppercase">Sản phẩm</th>
+                  <th className="p-4 text-[10px] font-black uppercase w-32 text-center">Công cụ</th>
+                  <th className="p-4 text-[10px] font-black uppercase text-right w-28">Tổng tiền</th>
+                  <th className="p-4 text-[10px] font-black uppercase text-right w-28">Lợi nhuận</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-blue-50">
@@ -646,13 +647,13 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                       key={c.customer_id}
                       id={`customer-row-${c.customer_id}`}
                       onClick={() => handleRowClick(c)} 
-                      className="hover:bg-blue-50/40 cursor-pointer transition-all border-l-4 border-transparent"
+                      className="hover:bg-blue-50/40 cursor-pointer transition-all group"
                     >
-                      <td className="p-5 text-center text-xs font-bold text-gray-400">{idx + 1}</td>
-                      <td className="p-5 text-xs font-black text-blue-900">{formatDDMM(c.start_date)}</td>
-                      <td className="p-5">
+                      <td className="p-4 text-center text-[11px] font-bold text-gray-400">{idx + 1}</td>
+                      <td className="p-4 text-[11px] font-black text-blue-900">{formatDDMM(c.start_date)}</td>
+                      <td className="p-4">
                         <div className="flex flex-col gap-1.5 items-start">
-                          <div className={`px-4 py-1.5 rounded-full text-[12px] font-black border uppercase tracking-tight shadow-sm ${getCustomerNamePillColor(c, products)}`}>
+                          <div className={`px-4 py-1.5 rounded-full text-[11px] sm:text-[12px] font-black border uppercase tracking-tight shadow-sm ${getCustomerNamePillColor(c, products)}`}>
                             {c.customer_name}
                           </div>
                           <div className="text-[10px] text-gray-400 font-bold ml-2">
@@ -660,30 +661,30 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                           </div>
                         </div>
                       </td>
-                      <td className="p-5 text-center font-black text-blue-900 text-sm">
+                      <td className="p-4 text-center font-black text-blue-900 text-[12px]">
                         {currentDay > 0 ? currentDay : 0}
                       </td>
-                      <td className="p-5">
+                      <td className="p-4">
                         <div className="flex flex-wrap gap-2">
                           {c.san_pham && c.san_pham.length > 0 ? c.san_pham.map((p, pIdx) => (
-                            <span key={pIdx} className="bg-blue-50 text-blue-500 px-3 py-1 rounded-full text-[10px] font-bold border border-blue-100 uppercase">
+                            <span key={pIdx} className="bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full text-[9px] font-bold border border-blue-100 uppercase">
                               {p.ten_sp} {p.so_luong > 1 ? `x ${p.so_luong}` : ''}
                             </span>
                           )) : '--'}
                         </div>
                       </td>
-                      <td className="p-5">
-                        <div className="flex items-center justify-center gap-5">
-                          <span onClick={(e) => handleIconClick(e, c, 'video_date')} className="hover:scale-125 transition-all cursor-pointer"><ClipboardList size={18} className={c.video_date ? "text-blue-600" : "text-gray-200"} /></span>
-                          <span onClick={(e) => handleIconClick(e, c, 'email')} className="hover:scale-125 transition-all cursor-pointer"><Mail size={18} className={c.email ? "text-blue-600" : "text-gray-200"} /></span>
-                          <span onClick={(e) => handleIconClick(e, c, 'sdt')} className="hover:scale-125 transition-all cursor-pointer"><Phone size={18} className={c.sdt ? "text-blue-600" : "text-gray-200"} /></span>
-                          <span onClick={(e) => handleIconClick(e, c, 'ma_vd')} className="hover:scale-125 transition-all cursor-pointer"><Truck size={18} className={c.ma_vd ? "text-orange-500" : "text-gray-200"} /></span>
+                      <td className="p-4">
+                        <div className="flex items-center justify-center gap-4">
+                          <span onClick={(e) => handleIconClick(e, c, 'video_date')} className="hover:scale-125 transition-all cursor-pointer"><ClipboardList size={16} className={c.video_date ? "text-blue-600" : "text-gray-200"} /></span>
+                          <span onClick={(e) => handleIconClick(e, c, 'email')} className="hover:scale-125 transition-all cursor-pointer"><Mail size={16} className={c.email ? "text-blue-600" : "text-gray-200"} /></span>
+                          <span onClick={(e) => handleIconClick(e, c, 'sdt')} className="hover:scale-125 transition-all cursor-pointer"><Phone size={16} className={c.sdt ? "text-blue-600" : "text-gray-200"} /></span>
+                          <span onClick={(e) => handleIconClick(e, c, 'ma_vd')} className="hover:scale-125 transition-all cursor-pointer"><Truck size={16} className={c.ma_vd ? "text-orange-500" : "text-gray-200"} /></span>
                         </div>
                       </td>
-                      <td className="p-5 text-right font-black text-blue-900 text-sm">
+                      <td className="p-4 text-right font-black text-blue-900 text-[12px]">
                         {formatVND(fin.revenue)}
                       </td>
-                      <td className="p-5 text-right font-black text-green-500 text-sm">
+                      <td className="p-4 text-right font-black text-green-500 text-[12px]">
                         {formatVND(fin.profit)}
                       </td>
                     </tr>

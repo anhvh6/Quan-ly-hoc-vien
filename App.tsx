@@ -42,12 +42,18 @@ const App: React.FC = () => {
       if (result.ok) {
         setConnectionStatus({ status: 'ok' });
       } else {
-        // Fix: Removed reference to non-existent 'code' property on result from api.testConnection.
-        // Casting to any to access error property because result is a union type where error may not always be present.
-        setConnectionStatus({ status: 'error', error: (result as any).error });
+        let errorMsg = (result as any).error || "Không thể kết nối máy chủ";
+        if (errorMsg === 'Failed to fetch') {
+          errorMsg = "Lỗi CORS hoặc Network: Không thể truy cập Google Apps Script. Hãy đảm bảo Script đã được Deploy ở chế độ 'Anyone'.";
+        }
+        setConnectionStatus({ status: 'error', error: errorMsg });
       }
     } catch (e: any) {
-      setConnectionStatus({ status: 'error', error: e.message });
+      let errorMsg = e.message;
+      if (errorMsg === 'Failed to fetch') {
+        errorMsg = "Lỗi CORS hoặc Network: Không thể truy cập Google Apps Script. Hãy đảm bảo Script đã được Deploy ở chế độ 'Anyone'.";
+      }
+      setConnectionStatus({ status: 'error', error: errorMsg });
     }
   };
 
