@@ -404,10 +404,18 @@ export const PlanEditor: React.FC<{ onNavigate: (page: string, params?: any) => 
   return (
     <Layout 
       title={
-        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-          <span className="truncate max-w-[120px] sm:max-w-[300px] uppercase">
+        <div className="flex items-center justify-between w-full gap-2">
+          <span className="truncate uppercase">
             PHÁC ĐỒ: {customer.customer_name || 'TẠO MỚI'}
           </span>
+          <button 
+            onClick={handleSave}
+            disabled={loading}
+            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-black text-[11px] sm:text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 shrink-0"
+          >
+            {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            Lưu
+          </button>
         </div>
       }
       onBack={() => onNavigate('dashboard')}
@@ -427,14 +435,6 @@ export const PlanEditor: React.FC<{ onNavigate: (page: string, params?: any) => 
               </button>
             </div>
           )}
-          <button 
-            onClick={handleSave}
-            disabled={loading}
-            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-black text-[11px] sm:text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
-          >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            Lưu
-          </button>
         </div>
       }
     >
