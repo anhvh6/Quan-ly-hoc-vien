@@ -4,7 +4,7 @@ import { User, Package, Plus, Info, Home, ChevronLeft } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
-  title?: string;
+  title?: React.ReactNode;
   onBack?: () => void;
   actions?: React.ReactNode;
 }
@@ -25,8 +25,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, onBack, actions
                 M
               </div>
             )}
-            <h1 className="text-base sm:text-lg font-black text-blue-900 tracking-tight uppercase">
-              {title || "MAGA PHƯƠNG ADMIN"}
+            <h1 className="text-base sm:text-lg font-black text-blue-900 tracking-tight">
+              {title || <span className="uppercase">MAGA PHƯƠNG ADMIN</span>}
             </h1>
           </div>
           

@@ -3,6 +3,7 @@ import { Search, UserPlus, Users, Calendar, ExternalLink, Edit2, Copy, Package, 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout';
 import { Card, Button, LineInput } from '../components/UI';
+import { DateInput } from '../components/DateInput';
 import { api } from '../services/api'; 
 import { Customer, CustomerStatus, Product } from '../types';
 import { calcRevenueCostProfit, isChuaGan } from '../utils/finance';
@@ -139,34 +140,32 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, products, onEdit,
             {customer.customer_name}
           </h4>
         </div>
-        <div className="flex items-center flex-wrap gap-x-2 sm:gap-x-3 gap-y-1">
+        <div className="flex items-center flex-wrap gap-x-2 sm:gap-x-3 gap-y-1.5">
           <div className="flex items-center gap-1.5 bg-white/60 px-2 py-0.5 rounded-lg border border-white/50 shadow-sm">
             <Calendar size={11} className="text-blue-400" />
             <span className="text-[10px] text-gray-500 font-bold">{formattedStart}</span>
           </div>
           {customer.status !== CustomerStatus.DELETED && (
-            <>
-              <div className="flex items-center gap-1.5 bg-white/60 px-2 py-0.5 rounded-lg border border-white/50 shadow-sm">
-                 <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter">Ngày {currentDay > 0 ? currentDay : 0}</span>
-              </div>
-              <span className={`text-[10px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-lg ${daysLeft < 0 ? 'bg-red-50 text-red-500' : daysLeft <= 5 ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-500'}`}>
-                {daysLeft < 0 ? 'Hết hạn' : `Còn ${daysLeft}D`}
-              </span>
-            </>
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border shadow-sm ${daysLeft < 0 ? 'bg-red-50 text-red-500 border-red-100' : daysLeft <= 5 ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+               <span className="text-[10px] font-black uppercase tracking-tighter">
+                 {currentDay > 0 ? currentDay : 0}/{daysLeft < 0 ? 'HH' : `${daysLeft}D`}
+               </span>
+            </div>
           )}
           {customer.status === CustomerStatus.DELETED && (
             <span className="text-[10px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-lg bg-gray-100 text-gray-500">Đã xóa</span>
           )}
+
+          <div className="flex items-center gap-1 ml-auto">
+            {hasPlan && customer.status !== CustomerStatus.DELETED && (
+              <>
+                <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(customer.link); alert("Đã copy link phác đồ!"); }} className="w-7 h-7 flex items-center justify-center text-blue-600 bg-white/80 hover:bg-blue-600 hover:text-white rounded-lg transition-all shadow-sm border border-blue-50 active:scale-90"><Copy size={12} /></button>
+                <button onClick={(e) => { e.stopPropagation(); onDuplicate(customer.customer_id); }} className="w-7 h-7 flex items-center justify-center text-orange-600 bg-white/80 hover:bg-orange-600 hover:text-white rounded-lg transition-all shadow-sm border border-orange-50 active:scale-90"><CopyPlus size={12} /></button>
+              </>
+            )}
+            <button onClick={(e) => { e.stopPropagation(); onEdit(customer.customer_id); }} className="w-7 h-7 flex items-center justify-center text-green-600 bg-white/80 hover:bg-green-600 hover:text-white rounded-lg transition-all shadow-sm border border-green-50 active:scale-90"><Edit2 size={12} /></button>
+          </div>
         </div>
-      </div>
-      <div className="relative z-10 flex items-center gap-1.5 ml-auto sm:ml-2 mt-2 sm:mt-0">
-        {hasPlan && customer.status !== CustomerStatus.DELETED && (
-          <>
-            <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(customer.link); alert("Đã copy link phác đồ!"); }} className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-blue-600 bg-white hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm border border-blue-50 active:scale-90"><Copy size={14} /></button>
-            <button onClick={(e) => { e.stopPropagation(); onDuplicate(customer.customer_id); }} className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-orange-600 bg-white hover:bg-orange-600 hover:text-white rounded-xl transition-all shadow-sm border border-orange-50 active:scale-90"><CopyPlus size={14} /></button>
-          </>
-        )}
-        <button onClick={(e) => { e.stopPropagation(); onEdit(customer.customer_id); }} className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-green-600 bg-white hover:bg-green-600 hover:text-white rounded-xl transition-all shadow-sm border border-green-50 active:scale-90"><Edit2 size={14} /></button>
       </div>
     </div>
   );
@@ -352,22 +351,36 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
   }, [customers, products]);
 
   const isSearching = searchTerm.trim() !== "";
+  const formatVND = (num: number) => new Intl.NumberFormat('vi-VN').format(num);
+
+  const totalProfit = useMemo(() => {
+    return customers
+      .filter(c => c.status !== CustomerStatus.DELETED)
+      .filter(c => {
+        const createdAtISO = toISODateKey(c.created_at);
+        return (!dateFrom || createdAtISO >= dateFrom) && (!dateTo || createdAtISO <= dateTo);
+      })
+      .reduce((acc, c) => {
+        const fin = calcRevenueCostProfit(c, products);
+        return acc + fin.profit;
+      }, 0);
+  }, [customers, products, dateFrom, dateTo]);
 
   return (
     <Layout 
       actions={
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => onNavigate('video-groups')}>
-            <List size={14} className="mr-1.5" /> Phác đồ mẫu
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => onNavigate('management')}>
-            <Users size={14} className="mr-1.5" /> Học viên
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => onNavigate('products')}>
-             <Package size={14} className="mr-1.5" /> Sản phẩm
-          </Button>
           <Button variant="primary" size="sm" onClick={() => onNavigate('plan-editor')}>
             <Plus size={14} className="mr-1.5" /> Tạo PĐ
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => onNavigate('management')}>
+            <Users size={14} className="mr-1.5" /> HV
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => onNavigate('products')}>
+             <Package size={14} className="mr-1.5" /> SP
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => onNavigate('video-groups')}>
+            <List size={14} className="mr-1.5" /> PĐ mẫu
           </Button>
         </div>
       }
@@ -379,6 +392,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
              <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-blue-50 sm:border-none sm:p-0"><CheckCircle size={14} className="text-green-500" /> {summaryStats.active} Hoạt động</div>
              <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-blue-50 sm:border-none sm:p-0"><AlertTriangle size={14} className="text-orange-400" /> {summaryStats.expiring} Sắp hết hạn</div>
              <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-blue-50 sm:border-none sm:p-0"><Clock size={14} className="text-blue-500" /> {summaryStats.total} Tổng</div>
+             <div className="flex items-center gap-2 bg-green-50 p-2 rounded-xl border border-green-100 sm:border-none sm:p-0 text-green-700"><CheckCircle size={14} className="text-green-600" /> {formatVND(totalProfit)}</div>
           </div>
           
           <div className="flex overflow-x-auto gap-3 sm:gap-x-4 sm:gap-y-2 mt-1 px-1 items-center scrollbar-hide pb-2 sm:pb-0">
@@ -408,28 +422,27 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
                 onChange={e => setDateToFrom(e.target.value)} 
               />
             </div>
-            <div className="w-full sm:w-40">
-              <LineInput 
-                label="Đến ngày"
-                type="date" 
+            <div className="w-full sm:w-40 relative">
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Đến ngày</label>
+                <button 
+                  onClick={() => { 
+                    setSearchTerm(""); 
+                    const def = getDefaultDateRange();
+                    setDateToFrom(def.from); 
+                    setDateTo(def.to); 
+                    setColorFilter(null); 
+                  }} 
+                  className="text-gray-400 hover:text-red-500 transition-all active:scale-90" 
+                  title="Xóa bộ lọc"
+                >
+                  <Eraser size={14} />
+                </button>
+              </div>
+              <DateInput 
                 value={dateTo} 
-                onChange={e => setDateTo(e.target.value)} 
+                onChange={val => setDateTo(val)} 
               />
-            </div>
-            <div className="col-span-2 flex justify-end sm:block">
-              <button 
-                onClick={() => { 
-                  setSearchTerm(""); 
-                  const def = getDefaultDateRange();
-                  setDateToFrom(def.from); 
-                  setDateTo(def.to); 
-                  setColorFilter(null); 
-                }} 
-                className="p-2 text-gray-400 hover:text-red-500 transition-all active:scale-90 bg-gray-50 sm:bg-transparent rounded-xl" 
-                title="Xóa bộ lọc"
-              >
-                <Eraser size={20} />
-              </button>
             </div>
           </div>
         </div>

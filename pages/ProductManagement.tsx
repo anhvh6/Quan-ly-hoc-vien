@@ -120,7 +120,7 @@ export const ProductManagement: React.FC<{ onNavigate: (page: string) => void }>
                         <input 
                           className="line-input text-xs" 
                           placeholder="Nhập tên sản phẩm..."
-                          value={p.ten_sp} 
+                          value={p.ten_sp || ''} 
                           onFocus={() => handleNameFocus(idx, p.ten_sp)}
                           onChange={e => updateProduct(idx, { ten_sp: e.target.value })} 
                         />
@@ -128,21 +128,21 @@ export const ProductManagement: React.FC<{ onNavigate: (page: string) => void }>
                       <td className="p-2">
                         <input 
                           className="line-input text-xs text-right" 
-                          value={formatCurrency(p.gia_nhap)} 
+                          value={formatCurrency(p.gia_nhap || 0)} 
                           onChange={e => updateProduct(idx, { gia_nhap: parseCurrency(e.target.value) })} 
                         />
                       </td>
                       <td className="p-2">
                         <input 
                           className="line-input text-xs text-right font-bold text-blue-600" 
-                          value={formatCurrency(p.gia_ban)} 
+                          value={formatCurrency(p.gia_ban || 0)} 
                           onChange={e => updateProduct(idx, { gia_ban: parseCurrency(e.target.value) })} 
                         />
                       </td>
                       <td className="p-2 text-center">
                         <select 
                           className="line-input text-[10px] text-center cursor-pointer" 
-                          value={p.trang_thai} 
+                          value={p.trang_thai ?? 1} 
                           onChange={e => updateProduct(idx, { trang_thai: parseInt(e.target.value) || 0 })}
                         >
                           <option value={1}>Còn hàng</option>

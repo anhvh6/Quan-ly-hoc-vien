@@ -289,15 +289,15 @@ export const VideoGroupManagement: React.FC<{ onNavigate: (page: string, params?
 
       <Modal isOpen={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} title={editingTask ? "SỬA BÀI TẬP MẪU" : "THÊM BÀI TẬP MẪU"} maxWidth="max-w-2xl">
         <div className="grid grid-cols-2 gap-4">
-          <LineInput type="number" label="Ngày tập" value={newTaskData.day} onChange={e => setNewTaskData({...newTaskData, day: parseInt(e.target.value) || 1})} />
+          <LineInput type="number" label="Ngày tập" value={newTaskData.day ?? 1} onChange={e => setNewTaskData({...newTaskData, day: parseInt(e.target.value) || 1})} />
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-4">Loại bài tập</label>
-            <select className="line-input font-bold" value={newTaskData.type} onChange={e => setNewTaskData({...newTaskData, type: e.target.value as ExerciseType})}>{EXERCISE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select>
+            <select className="line-input font-bold" value={newTaskData.type || ''} onChange={e => setNewTaskData({...newTaskData, type: e.target.value as ExerciseType})}>{EXERCISE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select>
           </div>
         </div>
-        <LineInput label="Tiêu đề bài tập" value={newTaskData.title} onChange={e => setNewTaskData({...newTaskData, title: e.target.value})} />
-        <LineInput isTextArea label="Nội dung chi tiết" className="h-48" value={newTaskData.detail} onChange={e => setNewTaskData({...newTaskData, detail: e.target.value})} />
-        <LineInput label="Link Video hướng dẫn" value={newTaskData.link} onChange={e => setNewTaskData({...newTaskData, link: e.target.value})} />
+        <LineInput label="Tiêu đề bài tập" value={newTaskData.title || ''} onChange={e => setNewTaskData({...newTaskData, title: e.target.value})} />
+        <LineInput isTextArea label="Nội dung chi tiết" className="h-48" value={newTaskData.detail || ''} onChange={e => setNewTaskData({...newTaskData, detail: e.target.value})} />
+        <LineInput label="Link Video hướng dẫn" value={newTaskData.link || ''} onChange={e => setNewTaskData({...newTaskData, link: e.target.value})} />
         <Button variant="primary" className="w-full mt-6 py-4" onClick={async () => {
           setSaving(true);
           try {

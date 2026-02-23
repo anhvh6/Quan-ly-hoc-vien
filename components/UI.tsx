@@ -82,6 +82,7 @@ export const LineInput: React.FC<InputProps> = ({ label, isTextArea, icon, class
         <Component 
           className={`line-input w-full ${icon ? 'pl-7' : ''}`} 
           {...(props as any)} 
+          value={props.value ?? ''}
         />
       </div>
     </div>

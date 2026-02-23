@@ -7,7 +7,8 @@ import {
   Pencil, User, CheckCircle, X, ExternalLink, Copy, CopyPlus, Play, List, Eye, ChevronDown, Maximize2, RefreshCw, UserPlus
 } from 'lucide-react';
 import { Layout } from '../components/Layout';
-import { Button, LineInput, Card } from '../components/UI';
+import { Button, LineInput, Card, Modal } from '../components/UI';
+import { DateInput } from '../components/DateInput';
 import { api } from '../services/api';
 import { Customer, Product, CustomerStatus } from '../types';
 import { calcRevenueCostProfit, isChuaGan } from '../utils/finance';
@@ -136,6 +137,17 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
   };
 
   const handleAddStudent = () => {
+    let defaultProducts: any[] = [];
+    let defaultTotal = 0;
+    if (products.length > 0) {
+      const firstP = products[0];
+      defaultProducts = [{ 
+        id_sp: firstP.id_sp, ten_sp: firstP.ten_sp, so_luong: 1, 
+        don_gia: firstP.gia_ban, gia_nhap: firstP.gia_nhap, thanh_tien: firstP.gia_ban 
+      }];
+      defaultTotal = firstP.gia_ban;
+    }
+
     setFormData({
       customer_name: '',
       sdt: '',
@@ -146,8 +158,8 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
       trang_thai: 0,
       start_date: toISODateKey(new Date()),
       duration_days: 62,
-      san_pham: [],
-      gia_tien: 0,
+      san_pham: defaultProducts,
+      gia_tien: defaultTotal,
       status: CustomerStatus.ACTIVE
     });
     setExpandedId('NEW');
@@ -481,13 +493,13 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                           <div className="flex-1">
                             <div className="text-[12px] font-black text-blue-900 uppercase">{item.ten_sp}</div>
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1">
-                              <span className="text-[11px] font-bold text-gray-400">SL: <input type="number" className="w-8 bg-transparent outline-none font-bold text-blue-600 border-b border-blue-50 focus:border-blue-400" value={item.so_luong} onChange={e => updateProductQty(item.id_sp, parseInt(e.target.value) || 0)} /></span>
+                              <span className="text-[11px] font-bold text-gray-400">SL: <input type="number" className="w-8 bg-transparent outline-none font-bold text-blue-600 border-b border-blue-50 focus:border-blue-400" value={item.so_luong || 0} onChange={e => updateProductQty(item.id_sp, parseInt(e.target.value) || 0)} /></span>
                               <span className="text-[11px] font-bold text-gray-400 flex items-center gap-1">
                                 GIÁ: 
                                 <input 
                                   type="text" 
                                   className="w-20 bg-transparent outline-none font-bold text-blue-900 border-b border-blue-50 focus:border-blue-400" 
-                                  value={formatVND(item.don_gia)} 
+                                  value={formatVND(item.don_gia || 0)} 
                                   onChange={e => updateProductPrice(item.id_sp, parseInt(e.target.value.replace(/\D/g, '')) || 0)} 
                                 />
                               </span>
@@ -527,8 +539,8 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
       actions={
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={() => onNavigate('plan-editor')}><Plus size={14} className="mr-1.5" /> THÊM PĐ</Button>
-          <Button variant="secondary" size="sm" onClick={() => onNavigate('dashboard')}><Home size={14} className="mr-1.5" /> TRANG CHỦ</Button>
           <Button variant="primary" size="sm" onClick={handleAddStudent}><UserPlus size={16} className="mr-2" /> THÊM HV</Button>
+          <Button variant="secondary" size="sm" onClick={() => onNavigate('dashboard')}><Home size={14} className="mr-1.5" /> TRANG CHỦ</Button>
         </div>
       }
     >
@@ -569,17 +581,30 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                 onChange={e => setDateToFrom(e.target.value)} 
               />
             </div>
-            <div className="w-full sm:w-32 lg:w-40">
-              <LineInput 
-                label="Đến ngày"
-                type="date" 
+            <div className="w-full sm:w-32 lg:w-40 relative">
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Đến ngày</label>
+                <button 
+                  onClick={() => { 
+                    setSearchTerm(""); 
+                    const def = getDefaultDateRange(); 
+                    setDateToFrom(def.from); 
+                    setDateTo(def.to); 
+                    setFilterMissing(null); 
+                  }} 
+                  className="text-gray-300 hover:text-red-500 transition-all active:scale-95"
+                  title="Xóa bộ lọc"
+                >
+                  <Eraser size={14} />
+                </button>
+              </div>
+              <DateInput 
                 value={dateTo} 
-                onChange={e => setDateTo(e.target.value)} 
+                onChange={val => setDateTo(val)} 
               />
             </div>
             
-            <div className="col-span-2 sm:col-span-1 flex flex-col gap-1 min-w-full sm:min-w-[200px]">
-              <label className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Tiêu chí lọc</label>
+            <div className="col-span-2 sm:col-span-1 flex flex-col gap-1 min-w-full sm:min-w-[200px] justify-end">
               <div className="relative group">
                 <select 
                   className="w-full bg-transparent border-b-2 border-blue-50 py-2.5 text-sm font-bold text-blue-900 outline-none focus:border-blue-500 transition-colors appearance-none pr-8 cursor-pointer"
@@ -598,22 +623,6 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                 </select>
                 <ChevronDown size={14} className="absolute right-1 top-1/2 -translate-y-1/2 text-blue-300 pointer-events-none group-focus-within:rotate-180 transition-transform" />
               </div>
-            </div>
-
-            <div className="col-span-2 sm:col-span-1 flex justify-end">
-              <button 
-                onClick={() => { 
-                  setSearchTerm(""); 
-                  const def = getDefaultDateRange(); 
-                  setDateToFrom(def.from); 
-                  setDateTo(def.to); 
-                  setFilterMissing(null); 
-                }} 
-                className="p-3 text-gray-300 hover:text-red-500 transition-all flex items-center gap-2 active:scale-95 bg-gray-50 sm:bg-transparent rounded-xl"
-                title="Xóa bộ lọc"
-              >
-                <Eraser size={20} />
-              </button>
             </div>
           </div>
         </div>
@@ -656,8 +665,8 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                           <div className={`px-4 py-1.5 rounded-full text-[11px] sm:text-[12px] font-black border uppercase tracking-tight shadow-sm ${getCustomerNamePillColor(c, products)}`}>
                             {c.customer_name}
                           </div>
-                          <div className="text-[10px] text-gray-400 font-bold ml-2">
-                            {c.sdt || 'Trống SĐT'}
+                          <div className="text-[10px] text-blue-600 font-black ml-2">
+                            {formatVND(fin.revenue)}
                           </div>
                         </div>
                       </td>
