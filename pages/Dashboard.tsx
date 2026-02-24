@@ -1,8 +1,8 @@
 
-import { Search, UserPlus, Users, Calendar, ExternalLink, Edit2, Copy, Package, Clock, AlertTriangle, CheckCircle, Archive, Zap, CopyPlus, UserCircle, Filter, Eraser, AlertCircle, X, Plus, Mail, MapPin, Truck, FileWarning, User, Play, List, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { Search, UserPlus, Users, Calendar, ExternalLink, Edit2, Copy, Package, Clock, AlertTriangle, CheckCircle, Archive, Zap, CopyPlus, UserCircle, Filter, Eraser, AlertCircle, X, Plus, Mail, MapPin, Truck, FileWarning, User, Play, List, ChevronDown, ChevronRight, Trash2, RefreshCw, ShoppingBag } from 'lucide-react';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout';
-import { Card, Button, LineInput } from '../components/UI';
+import { Card, Button, LineInput, Modal } from '../components/UI';
 import { DateInput } from '../components/DateInput';
 import { api } from '../services/api'; 
 import { Customer, CustomerStatus, Product } from '../types';
@@ -201,6 +201,104 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
     'expired': true,
     'deleted': true
   });
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [formData, setFormData] = useState<Partial<Customer>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+
+  const handleAddStudent = () => {
+    let defaultProducts: any[] = [];
+    let defaultTotal = 0;
+    if (products.length > 0) {
+      const firstP = products[0];
+      defaultProducts = [{ 
+        id_sp: firstP.id_sp, ten_sp: firstP.ten_sp, so_luong: 1, 
+        don_gia: firstP.gia_ban, gia_nhap: firstP.gia_nhap, thanh_tien: firstP.gia_ban 
+      }];
+      defaultTotal = firstP.gia_ban;
+    }
+
+    setFormData({
+      customer_name: '',
+      sdt: '',
+      email: '',
+      dia_chi: '',
+      ma_vd: '',
+      trang_thai_gan: 'Chưa gán',
+      trang_thai: 0,
+      start_date: toISODateKey(new Date()),
+      duration_days: 62,
+      san_pham: defaultProducts,
+      gia_tien: defaultTotal,
+      status: CustomerStatus.ACTIVE
+    });
+    setIsAddModalOpen(true);
+    setShowProductDropdown(false);
+  };
+
+  const handleSave = async () => {
+    if (!formData.customer_name) {
+      alert("Vui lòng nhập tên học viên!");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const payload = { ...formData };
+      payload.customer_id = 'C' + Date.now();
+      payload.created_at = new Date().toISOString();
+      
+      const result = await api.upsertCustomer(payload);
+      setCustomers(prev => [result, ...prev]);
+      
+      alert("Đã thêm học viên mới thành công!");
+      setIsAddModalOpen(false);
+    } catch (e) {
+      alert("Lỗi khi lưu dữ liệu!");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleProduct = (product: Product) => {
+    const current = formData.san_pham || [];
+    const exists = current.find(p => p.id_sp === product.id_sp);
+    let newItems;
+    if (exists) {
+      newItems = current.filter(p => p.id_sp !== product.id_sp);
+    } else {
+      newItems = [...current, { 
+        id_sp: product.id_sp, ten_sp: product.ten_sp, so_luong: 1, 
+        don_gia: product.gia_ban, gia_nhap: product.gia_nhap, thanh_tien: product.gia_ban 
+      }];
+    }
+    const total = newItems.reduce((acc, curr) => acc + curr.thanh_tien, 0);
+    setFormData({ ...formData, san_pham: newItems, gia_tien: total });
+    setShowProductDropdown(false);
+  };
+
+  const updateProductQty = (id: string, qty: number) => {
+    const newItems = (formData.san_pham || []).map(p => {
+      if (p.id_sp === id) { 
+        const q = Math.max(0, qty); 
+        return { ...p, so_luong: q, thanh_tien: q * p.don_gia }; 
+      }
+      return p;
+    });
+    const total = newItems.reduce((acc, curr) => acc + curr.thanh_tien, 0);
+    setFormData({ ...formData, san_pham: newItems, gia_tien: total });
+  };
+
+  const updateProductPrice = (id: string, price: number) => {
+    const newItems = (formData.san_pham || []).map(p => {
+      if (p.id_sp === id) { 
+        const pr = Math.max(0, price); 
+        return { ...p, don_gia: pr, thanh_tien: p.so_luong * pr }; 
+      }
+      return p;
+    });
+    const total = newItems.reduce((acc, curr) => acc + curr.thanh_tien, 0);
+    setFormData({ ...formData, san_pham: newItems, gia_tien: total });
+  };
 
   const toggleGroup = (groupKey: string) => {
     setCollapsedGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }));
@@ -368,6 +466,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
 
   return (
     <Layout 
+      onIconClick={handleAddStudent}
       actions={
         <div className="flex gap-2">
           <Button variant="primary" size="sm" onClick={() => onNavigate('plan-editor')}>
@@ -519,6 +618,149 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
           </div>
         )}
       </div>
+
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="THÊM HỌC VIÊN MỚI"
+        maxWidth="max-w-4xl"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="ghost" onClick={() => setIsAddModalOpen(false)}>HỦY BỎ</Button>
+            <Button variant="primary" onClick={handleSave} disabled={isSaving}>
+              {isSaving ? <RefreshCw size={16} className="animate-spin mr-2" /> : <Plus size={16} className="mr-2" />}
+              LƯU HỌC VIÊN
+            </Button>
+          </div>
+        }
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-1">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+              <h3 className="text-[13px] font-black text-blue-900 uppercase tracking-widest">Thông tin cơ bản</h3>
+            </div>
+            
+            <LineInput 
+              label="Tên học viên" 
+              placeholder="VÍ DỤ: NGUYỄN THỊ MAI" 
+              value={formData.customer_name} 
+              onChange={e => setFormData({ ...formData, customer_name: e.target.value.toUpperCase() })} 
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <LineInput 
+                label="Số điện thoại" 
+                placeholder="09xx..." 
+                value={formData.sdt} 
+                onChange={e => setFormData({ ...formData, sdt: e.target.value })} 
+              />
+              <LineInput 
+                label="Email" 
+                placeholder="example@mail.com" 
+                value={formData.email} 
+                onChange={e => setFormData({ ...formData, email: e.target.value })} 
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <LineInput 
+                label="Ngày bắt đầu" 
+                type="date" 
+                value={formData.start_date} 
+                onChange={e => setFormData({ ...formData, start_date: e.target.value })} 
+              />
+              <LineInput 
+                label="Số ngày tập" 
+                type="number" 
+                value={formData.duration_days} 
+                onChange={e => setFormData({ ...formData, duration_days: parseInt(e.target.value) || 0 })} 
+              />
+            </div>
+
+            <LineInput 
+              label="Địa chỉ" 
+              placeholder="Số nhà, tên đường, quận/huyện..." 
+              value={formData.dia_chi} 
+              onChange={e => setFormData({ ...formData, dia_chi: e.target.value })} 
+            />
+          </div>
+
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+                <h3 className="text-[13px] font-black text-blue-900 uppercase tracking-widest">Đơn hàng & Sản phẩm</h3>
+              </div>
+              <div className="relative">
+                <button 
+                  onClick={() => setShowProductDropdown(!showProductDropdown)}
+                  className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-all shadow-md active:scale-95"
+                >
+                  <Plus size={20} />
+                </button>
+                
+                {showProductDropdown && (
+                  <div className="absolute right-0 top-10 w-72 sm:w-80 bg-white border border-blue-50 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="p-4 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+                      <span className="text-[11px] font-black text-blue-900 uppercase">Danh sách sản phẩm</span>
+                      <button onClick={() => setShowProductDropdown(false)}><X size={14} className="text-blue-400" /></button>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto p-2 custom-scrollbar">
+                      {products.filter(p => p.trang_thai === 1).map(p => (
+                        <div 
+                          key={p.id_sp} 
+                          onClick={() => toggleProduct(p)}
+                          className="flex items-center justify-between p-3 hover:bg-blue-50 rounded-xl cursor-pointer transition-colors group"
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-[12px] font-bold text-gray-700 uppercase group-hover:text-blue-600">{p.ten_sp}</span>
+                            <span className="text-[10px] font-bold text-gray-400">{formatVND(p.gia_ban)}</span>
+                          </div>
+                          <Plus size={14} className="text-blue-200 group-hover:text-blue-600" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-gray-50/50 rounded-3xl p-6 border border-blue-50">
+              <div className="flex flex-col gap-4 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
+                {(formData.san_pham || []).map(item => (
+                  <div key={item.id_sp} className="flex items-center justify-between group bg-white p-3 rounded-2xl border border-blue-50/50 shadow-sm">
+                    <div className="flex-1">
+                      <div className="text-[12px] font-black text-blue-900 uppercase">{item.ten_sp}</div>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-[11px] font-bold text-gray-400">SL: <input type="number" className="w-8 bg-transparent outline-none font-bold text-blue-600 border-b border-blue-50 focus:border-blue-400" value={item.so_luong || 0} onChange={e => updateProductQty(item.id_sp, parseInt(e.target.value) || 0)} /></span>
+                        <span className="text-[11px] font-bold text-gray-400">GIÁ: <input type="text" className="w-20 bg-transparent outline-none font-bold text-blue-900 border-b border-blue-50 focus:border-blue-400" value={formatVND(item.don_gia || 0)} onChange={e => updateProductPrice(item.id_sp, parseInt(e.target.value.replace(/\D/g, '')) || 0)} /></span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-black text-blue-600">{formatVND(item.thanh_tien)}</span>
+                      <button onClick={() => toggleProduct(products.find(p => p.id_sp === item.id_sp)!)} className="text-red-200 hover:text-red-500 transition-all"><Trash2 size={16} /></button>
+                    </div>
+                  </div>
+                ))}
+                {(formData.san_pham || []).length === 0 && (
+                  <div className="py-10 text-center">
+                    <ShoppingBag size={32} className="mx-auto text-blue-100 mb-2" />
+                    <p className="text-gray-400 italic text-[11px]">Chưa chọn sản phẩm nào cho đơn hàng này</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-blue-100 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">TỔNG THANH TOÁN</span>
+                  <span className="text-2xl font-black text-blue-600">{formatVND(formData.gia_tien || 0)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };

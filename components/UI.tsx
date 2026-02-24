@@ -110,17 +110,17 @@ interface ModalProps {
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, maxWidth = 'max-w-md' }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-blue-900/40 backdrop-blur-md" onClick={onClose}></div>
-      <div className={`bg-white w-full ${maxWidth} rounded-[2.5rem] relative z-10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300`}>
-        <div className="p-8 border-b border-blue-50">
-          <h3 className="text-xl font-extrabold text-blue-900 uppercase tracking-tight">{title}</h3>
+      <div className={`bg-white w-full ${maxWidth} max-h-[90vh] rounded-[2rem] sm:rounded-[2.5rem] relative z-10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col`}>
+        <div className="p-6 sm:p-8 border-b border-blue-50 shrink-0">
+          <h3 className="text-lg sm:text-xl font-extrabold text-blue-900 uppercase tracking-tight">{title}</h3>
         </div>
-        <div className="p-8 text-sm text-gray-600 leading-relaxed font-medium">
+        <div className="p-6 sm:p-8 text-sm text-gray-600 leading-relaxed font-medium overflow-y-auto custom-scrollbar flex-1">
           {children}
         </div>
         {footer && (
-          <div className="p-6 bg-blue-50/50 flex justify-end gap-3 px-8">
+          <div className="p-5 sm:p-6 bg-blue-50/50 flex justify-end gap-3 px-6 sm:px-8 shrink-0">
             {footer}
           </div>
         )}

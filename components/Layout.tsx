@@ -6,10 +6,11 @@ interface LayoutProps {
   children: React.ReactNode;
   title?: React.ReactNode;
   onBack?: () => void;
+  onIconClick?: () => void;
   actions?: React.ReactNode;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, title, onBack, actions }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, title, onBack, onIconClick, actions }) => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
       {/* Header */}
@@ -21,7 +22,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, onBack, actions
                 <ChevronLeft size={20} className="text-blue-600" />
               </button>
             ) : (
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-md shrink-0">
+              <div 
+                onClick={onIconClick}
+                className={`w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-md shrink-0 ${onIconClick ? 'cursor-pointer hover:bg-blue-700 active:scale-95 transition-all' : ''}`}
+              >
                 M
               </div>
             )}
