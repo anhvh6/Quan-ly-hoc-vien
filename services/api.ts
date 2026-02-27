@@ -3,7 +3,7 @@ import { Customer, Product, ExerciseTask, CustomerStatus, ExerciseType } from '.
 import { DEFAULT_SIDEBAR_BLOCKS } from '../constants';
 import { toISODateKey } from '../utils/date';
 
-const API_URL = "https://script.google.com/macros/s/AKfycbzSnplwm9SYdns0RhYr-fNwWatFhpwrd6rraK-fBFhR5OKYnz4JTl_Ba4JKRLbANJWw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxw_EQXOmzZnov6IRLLjse9G1AX_yaJ_r-jUwEvtCqZWMvOg-2xQX_XFXeyuH9Vqv_8Rw/exec";
 
 const normalizeCustomer = (item: any): Customer => {
   if (!item) return item;

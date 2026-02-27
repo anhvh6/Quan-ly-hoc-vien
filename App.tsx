@@ -21,6 +21,14 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
+      const hostname = window.location.hostname;
+
+      // Bảo mật: Nếu truy cập từ tên miền học viên mà không có mã phác đồ, chuyển hướng về trang chủ giới thiệu
+      if (hostname === 'phacdo.netlify.app' && !hash.startsWith('#/client/')) {
+        window.location.href = 'https://30ngay-thaydoi.netlify.app/';
+        return;
+      }
+
       if (hash.startsWith('#/client/')) {
         const rest = hash.replace('#/client/', '');
         const parts = rest.split('?');
