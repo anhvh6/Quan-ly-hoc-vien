@@ -5,7 +5,7 @@ import { Customer, ExerciseTask, CustomerStatus, ExerciseType } from '../types';
 import { toVnZeroHour, formatDDMMYYYY, getDiffDays, addDays } from '../utils/date';
 import { ImmersiveChat } from '../components/ImmersiveChat';
 
-export const ClientView: React.FC<{ customerId: string; onNavigate?: (page: string, params?: any) => void }> = ({ customerId, onNavigate }) => {
+export const ClientView: React.FC<{ customerId: string; token?: string; onNavigate?: (page: string, params?: any) => void }> = ({ customerId, token, onNavigate }) => {
   const [customer, setCustomer] = useState<Customer | any>(null);
   const [tasks, setTasks] = useState<ExerciseTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,13 +15,21 @@ export const ClientView: React.FC<{ customerId: string; onNavigate?: (page: stri
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isImmersiveOpen, setIsImmersiveOpen] = useState(false);
   const [copyToast, setCopyToast] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   
   const refreshInFlight = useRef(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
   const fetchData = async () => {
+    // Nếu không có token và không có onNavigate (không phải admin), từ chối ngay
+    if (!token && !onNavigate) {
+      setAccessDenied(true);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = await api.refreshClientData(customerId);
+      const data = await api.refreshClientData(customerId, token);
       if (data) {
         setCustomer(data.customer);
         const cleanTasks = (data.tasks || [])
@@ -48,15 +56,21 @@ export const ClientView: React.FC<{ customerId: string; onNavigate?: (page: stri
             });
           }, 1000);
         }
+      } else {
+        // Nếu API trả về null (có thể do sai token)
+        if (token) setAccessDenied(true);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Lỗi tải dữ liệu học viên:", err);
+      if (err.message === 'ACCESS_DENIED') {
+        setAccessDenied(true);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, [customerId]);
+  useEffect(() => { fetchData(); }, [customerId, token]);
 
   // Cuộn đến ngày đang học sau khi render xong
   useEffect(() => {
@@ -183,6 +197,25 @@ export const ClientView: React.FC<{ customerId: string; onNavigate?: (page: stri
     )
   );
 
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-[#F8FBFF] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-white rounded-[28px] flex items-center justify-center mb-8 shadow-xl text-4xl">
+          🚫
+        </div>
+        <h2 className="text-2xl font-black text-[#1E3A8A] mb-4 tracking-tight uppercase">
+          TRUY CẬP BỊ TỪ CHỐI
+        </h2>
+        <p className="text-gray-500 mb-10 max-w-sm text-[16px] leading-relaxed font-medium">
+          Liên kết không hợp lệ hoặc thiếu mã truy cập. Vui lòng sử dụng liên kết chính thức được cung cấp bởi MeGa Phương.
+        </p>
+        <a href="https://zalo.me/0966888609" target="_blank" className="bg-[#0068ff] text-white font-bold py-4 px-12 rounded-full shadow-lg uppercase text-[12px] tracking-widest transition-all active:scale-95">
+          💬 Hỗ trợ qua Zalo
+        </a>
+      </div>
+    );
+  }
+
   if (isBlocked) {
     return (
       <div className="min-h-screen bg-[#F8FBFF] flex flex-col items-center justify-center p-6 text-center">
@@ -208,6 +241,7 @@ export const ClientView: React.FC<{ customerId: string; onNavigate?: (page: stri
   }
 
   const today = toVnZeroHour();
+  if (!customer) return null;
   const startDate = toVnZeroHour(customer.start_date);
   const allowedDay = customer.allowed_day || getDiffDays(startDate, today) + 1;
   const isNotStarted = allowedDay < 1;

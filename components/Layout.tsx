@@ -7,10 +7,11 @@ interface LayoutProps {
   title?: React.ReactNode;
   onBack?: () => void;
   onIconClick?: () => void;
+  onTitleClick?: () => void;
   actions?: React.ReactNode;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, title, onBack, onIconClick, actions }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, title, onBack, onIconClick, onTitleClick, actions }) => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
       {/* Header */}
@@ -29,7 +30,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, onBack, onIconC
                 M
               </div>
             )}
-            <div className="text-base sm:text-lg font-black text-blue-900 tracking-tight flex-1 min-w-0">
+            <div 
+              onClick={onTitleClick}
+              className={`text-base sm:text-lg font-black text-blue-900 tracking-tight flex-1 min-w-0 ${onTitleClick ? 'cursor-pointer hover:text-blue-600 transition-colors' : ''}`}
+            >
               {title || <span className="uppercase">MAGA PHƯƠNG ADMIN</span>}
             </div>
           </div>

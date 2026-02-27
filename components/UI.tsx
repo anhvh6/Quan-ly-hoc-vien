@@ -110,7 +110,7 @@ interface ModalProps {
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, maxWidth = 'max-w-md' }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-blue-900/40 backdrop-blur-md" onClick={onClose}></div>
       <div className={`bg-white w-full ${maxWidth} max-h-[90vh] rounded-[2rem] sm:rounded-[2.5rem] relative z-10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col`}>
         <div className="p-6 sm:p-8 border-b border-blue-50 shrink-0">

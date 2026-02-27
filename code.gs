@@ -140,7 +140,16 @@ function doGet(e) {
     switch (action) {
       case 'getCustomers': res = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME); break;
       case 'getCustomer': 
-        const cObj = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME).find(c => String(c.customer_id) === String(e.parameter.id));
+        const cId = String(e.parameter.id);
+        const reqToken = e.parameter.token;
+        const cObj = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME).find(c => String(c.customer_id) === cId);
+        
+        if (reqToken) {
+          if (!cObj || String(cObj.token) !== String(reqToken)) {
+            throw new Error('ACCESS_DENIED');
+          }
+        }
+        
         if (cObj) {
           const acc = calculateAccessState(cObj);
           cObj.access_state = acc.state;
@@ -148,7 +157,19 @@ function doGet(e) {
         }
         res = cObj;
         break;
-      case 'getPlan': res = getPlanData(ss, e.parameter.customerId, e.parameter.videoDate); break;
+      case 'getPlan': 
+        const pCustId = String(e.parameter.customerId);
+        const pToken = e.parameter.token;
+        
+        if (pToken) {
+          const pCust = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME).find(c => String(c.customer_id) === pCustId);
+          if (!pCust || String(pCust.token) !== String(pToken)) {
+            throw new Error('ACCESS_DENIED');
+          }
+        }
+        
+        res = getPlanData(ss, e.parameter.customerId, e.parameter.videoDate); 
+        break;
       case 'getVideoDates': 
         const masterSheet = getSheetSmart_(ss, MASTER_SHEET_NAME);
         if (!masterSheet) res = [];
@@ -186,6 +207,60 @@ function doGet(e) {
         });
         break;
       case 'getProducts': res = dbReadSheet_Global(ss, PRODUCT_SHEET_NAME); break;
+      case 'getPlanEditorData':
+        const editorId = e.parameter.id;
+        const editorTempId = e.parameter.templateId;
+        const editorRes = {
+          dates: [],
+          products: [],
+          customer: null,
+          template: null,
+          tasks: []
+        };
+        
+        // Get dates
+        const mSheet = getSheetSmart_(ss, MASTER_SHEET_NAME);
+        if (mSheet) {
+          const v = mSheet.getDataRange().getValues();
+          const headers = v[0].map(x => String(x||"").toLowerCase().trim());
+          const vdIdx = headers.indexOf("video_date");
+          if (vdIdx > -1) {
+            const set = new Set();
+            for(let i=1; i<v.length; i++) {
+              const k = toDateKey_Global(v[i][vdIdx]);
+              if(k) set.add(k);
+            }
+            editorRes.dates = Array.from(set).sort().reverse();
+          }
+        }
+        
+        // Get products
+        editorRes.products = dbReadSheet_Global(ss, PRODUCT_SHEET_NAME);
+        
+        const allCusts = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME);
+        
+        if (editorId && editorId !== "undefined" && editorId !== "null" && editorId !== "NEW") {
+          editorRes.customer = allCusts.find(c => String(c.customer_id) === String(editorId));
+          if (editorRes.customer && !editorTempId) {
+            editorRes.tasks = getPlanData(ss, editorId, editorRes.customer.video_date);
+          }
+        }
+        
+        if (editorTempId && editorTempId !== "undefined" && editorTempId !== "null") {
+          editorRes.template = allCusts.find(c => String(c.customer_id) === String(editorTempId));
+          if (editorRes.template) {
+            editorRes.tasks = getPlanData(ss, editorTempId, editorRes.template.video_date);
+          }
+        } else if (!editorId || editorId === "NEW") {
+          // New student, no template -> load latest master if available
+          const latest = editorRes.dates.length > 0 ? editorRes.dates[0] : null;
+          if (latest) {
+            editorRes.tasks = getPlanData(ss, "NEW", latest);
+          }
+        }
+        
+        res = editorRes;
+        break;
       case 'test': res = "OK"; break;
       default: res = "Action not found";
     }
@@ -299,8 +374,8 @@ function upsertCustomer_Backend(ss, payload) {
     }
   }
 
-  const scriptUrl = ScriptApp.getService().getUrl();
-  if (scriptUrl) payload.link = `${scriptUrl}?u=${payload.customer_id}&t=${payload.token}`;
+  const NETLIFY_CLIENT_BASE = "https://phacdo.netlify.app/#/client";
+  payload.link = `${NETLIFY_CLIENT_BASE}/${payload.customer_id}?t=${payload.token}`;
 
   const rowData = headers.map(h => {
     let val = payload[h];

@@ -45,8 +45,10 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
+  const [copySearchTerm, setCopySearchTerm] = useState("");
+  const [isCopying, setIsCopying] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
   const [expandedId, setExpandedId] = useState<string | null>(initialId || null);
   const [lastViewedId, setLastViewedId] = useState<string | null>(initialId || null);
   const [formData, setFormData] = useState<Partial<Customer>>({});
@@ -160,7 +162,9 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
       duration_days: 62,
       san_pham: defaultProducts,
       gia_tien: defaultTotal,
-      status: CustomerStatus.ACTIVE
+      status: CustomerStatus.ACTIVE,
+      link: '',
+      video_date: ''
     });
     setExpandedId('NEW');
     setShowProductDropdown(false);
@@ -438,6 +442,13 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
                            >
                              <Plus size={22} />
                            </button>
+                           <button 
+                             onClick={() => setIsCopyModalOpen(true)}
+                             className="flex items-center justify-center w-10 h-10 bg-orange-50 text-orange-600 rounded-xl hover:bg-orange-100 transition-all border border-orange-100 hover:scale-110"
+                             title="Copy phác đồ từ học viên khác"
+                           >
+                             <CopyPlus size={22} />
+                           </button>
                          </div>
                        )}
                      </div>
@@ -705,6 +716,66 @@ export const CustomerManagement: React.FC<{ onNavigate: (page: string, params?: 
         </div>
       </div>
       {renderEditModal()}
+
+      <Modal
+        isOpen={isCopyModalOpen}
+        onClose={() => { setIsCopyModalOpen(false); setCopySearchTerm(""); }}
+        title="CHỌN HỌC VIÊN ĐỂ COPY PHÁC ĐỒ"
+        maxWidth="max-w-2xl"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="relative">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input 
+              type="text"
+              placeholder="Tìm tên, SĐT học viên..."
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-blue-900"
+              value={copySearchTerm}
+              onChange={(e) => setCopySearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="max-h-[400px] overflow-y-auto custom-scrollbar flex flex-col gap-2">
+            {customers
+              .filter(c => c.video_date && (
+                c.customer_name.toLowerCase().includes(copySearchTerm.toLowerCase()) ||
+                c.sdt.includes(copySearchTerm)
+              ))
+              .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+              .map(c => (
+                <div 
+                  key={c.customer_id}
+                  onClick={async () => {
+                    if (isCopying) return;
+                    setIsCopying(true);
+                    try {
+                      if (expandedId === 'NEW') {
+                        onNavigate('plan-editor', { draftCustomer: formData, templateId: c.customer_id });
+                      } else {
+                        onNavigate('plan-editor', { customerId: expandedId, templateId: c.customer_id });
+                      }
+                      setIsCopyModalOpen(false);
+                    } catch (e) {
+                      alert("Lỗi khi copy phác đồ!");
+                    } finally {
+                      setIsCopying(false);
+                    }
+                  }}
+                  className="flex items-center justify-between p-4 hover:bg-blue-50 rounded-2xl cursor-pointer border border-transparent hover:border-blue-100 transition-all group"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-black text-blue-900 uppercase text-sm group-hover:text-blue-600">{c.customer_name}</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">SĐT: {c.sdt || '---'} | NGÀY: {formatDDMMYYYY(c.video_date)}</span>
+                  </div>
+                  <CopyPlus size={18} className="text-gray-300 group-hover:text-blue-600" />
+                </div>
+              ))}
+            {customers.filter(c => c.video_date).length === 0 && (
+              <div className="py-10 text-center text-gray-400 italic text-sm">Chưa có học viên nào có phác đồ để copy...</div>
+            )}
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };

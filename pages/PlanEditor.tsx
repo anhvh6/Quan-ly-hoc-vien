@@ -115,73 +115,26 @@ export const PlanEditor: React.FC<{ onNavigate: (page: string, params?: any) => 
     try {
       setLoading(true);
       setError(null);
-      const [datesRes, productsRes] = await Promise.all([
-        api.getVideoDates(),
-        api.getProducts()
-      ]);
       
-      const dates = Array.isArray(datesRes) ? datesRes : [];
+      const data = await api.getPlanEditorData(customerId, templateId);
+      
+      const dates = Array.isArray(data.dates) ? data.dates : [];
       setMasterDates(dates);
       
-      const allProducts = Array.isArray(productsRes) ? productsRes : [];
+      const allProducts = Array.isArray(data.products) ? data.products : [];
       setProducts(allProducts);
 
-      if (customerId) {
-        const c = await api.getCustomerById(customerId);
-        if (c) {
-          let pc = { ...c };
-          if (c.start_date) pc.start_date = toInputDateString(c.start_date);
-          setCustomer(pc);
-          
-          const studentTRes = await api.getPlan(customerId, pc.video_date || "");
-          const studentT = Array.isArray(studentTRes) ? studentTRes : [];
-          setTasks(studentT);
-          setIsCustomized(studentT.some((t: any) => t._is_master === false)); 
-        }
-      } else if (templateId) {
-        const source = await api.getCustomerById(templateId);
-        if (source) {
-          // Mặc định chọn sản phẩm đầu tiên cho bản sao
-          let defaultProducts: any[] = [];
-          let defaultTotal = 0;
-          if (allProducts.length > 0) {
-            const firstP = allProducts[0];
-            defaultProducts = [{
-              id_sp: firstP.id_sp,
-              ten_sp: firstP.ten_sp,
-              so_luong: 1,
-              don_gia: firstP.gia_ban,
-              gia_nhap: firstP.gia_nhap,
-              thanh_tien: firstP.gia_ban
-            }];
-            defaultTotal = firstP.gia_ban;
-          }
+      const tasksData = Array.isArray(data.tasks) ? data.tasks : [];
+      setTasks(tasksData);
 
-          const initialData = {
-            ...customer,
-            customer_name: draftCustomer?.customer_name || (source.customer_name ? `${source.customer_name} - SAO CHÉP` : ""),
-            duration_days: source.duration_days,
-            video_date: source.video_date,
-            sidebar_blocks_json: [...(source.sidebar_blocks_json || DEFAULT_SIDEBAR_BLOCKS)],
-            note: String(source.note || ""),
-            chewing_status: String(source.chewing_status || DEFAULT_CHEWING_INSTRUCTION),
-            app_title: source.app_title,
-            app_slogan: source.app_slogan,
-            trang_thai: 0,
-            trang_thai_gan: "0",
-            san_pham: defaultProducts,
-            gia_tien: defaultTotal
-          };
-          setCustomer(initialData);
-          const tRes = await api.getPlan(templateId, source.video_date || "");
-          const t = Array.isArray(tRes) ? tRes : [];
-          setTasks(t);
-          setIsCustomized(true);
-        }
+      if (customerId && data.customer) {
+        const c = data.customer;
+        let pc = { ...c };
+        if (c.start_date) pc.start_date = toInputDateString(c.start_date);
+        setCustomer(pc);
+        setIsCustomized(tasksData.some((t: any) => t._is_master === false)); 
       } else {
-        const latestDate = dates.length > 0 ? dates[0] : "";
-        
-        // Mặc định chọn sản phẩm đầu tiên
+        // New student case
         let defaultProducts: any[] = [];
         let defaultTotal = 0;
         if (allProducts.length > 0) {
@@ -197,20 +150,40 @@ export const PlanEditor: React.FC<{ onNavigate: (page: string, params?: any) => 
           defaultTotal = firstP.gia_ban;
         }
 
-        const initialData = { 
-          ...customer, 
+        setCustomer(prev => ({ 
+          ...prev, 
           ...draftCustomer,
-          video_date: draftCustomer?.video_date || latestDate,
           trang_thai: 0,
           trang_thai_gan: "0",
-          san_pham: defaultProducts,
-          gia_tien: defaultTotal
-        };
-        setCustomer(initialData);
-        if (initialData.video_date) {
-          await loadMasterPreview(initialData.video_date);
-          setIsCustomized(false);
-        }
+          san_pham: draftCustomer?.san_pham || defaultProducts,
+          gia_tien: draftCustomer?.gia_tien || defaultTotal
+        }));
+      }
+
+      if (templateId && data.template) {
+        const source = data.template;
+        setCustomer(prev => ({
+          ...prev,
+          duration_days: source.duration_days,
+          start_date: toInputDateString(new Date()),
+          video_date: source.video_date,
+          sidebar_blocks_json: [...(source.sidebar_blocks_json || DEFAULT_SIDEBAR_BLOCKS)],
+          note: String(source.note || ""),
+          chewing_status: String(source.chewing_status || DEFAULT_CHEWING_INSTRUCTION),
+          app_title: source.app_title,
+          app_slogan: source.app_slogan,
+        }));
+        setIsCustomized(true);
+      } else if (!customerId) {
+        // New student without template
+        const latestDate = dates.length > 0 ? dates[0] : "";
+        setCustomer(prev => {
+          const videoDate = prev.video_date || latestDate;
+          if (!templateId) {
+            setIsCustomized(false);
+          }
+          return { ...prev, video_date: videoDate };
+        });
       }
     } catch (err: any) {
       console.error("PlanEditor Fetch Error:", err);

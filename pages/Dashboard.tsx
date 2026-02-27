@@ -1,5 +1,5 @@
 
-import { Search, UserPlus, Users, Calendar, ExternalLink, Edit2, Copy, Package, Clock, AlertTriangle, CheckCircle, Archive, Zap, CopyPlus, UserCircle, Filter, Eraser, AlertCircle, X, Plus, Mail, MapPin, Truck, FileWarning, User, Play, List, ChevronDown, ChevronRight, Trash2, RefreshCw, ShoppingBag } from 'lucide-react';
+import { Search, UserPlus, Users, Calendar, ExternalLink, Edit2, Copy, Package, Clock, AlertTriangle, CheckCircle, Archive, Zap, CopyPlus, UserCircle, Filter, Eraser, AlertCircle, X, Plus, Mail, MapPin, Truck, FileWarning, User, Play, List, ChevronDown, ChevronRight, Trash2, RefreshCw, ShoppingBag, Phone } from 'lucide-react';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout';
 import { Card, Button, LineInput, Modal } from '../components/UI';
@@ -202,6 +202,9 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
     'deleted': true
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
+  const [copySearchTerm, setCopySearchTerm] = useState("");
+  const [isCopying, setIsCopying] = useState(false);
   const [formData, setFormData] = useState<Partial<Customer>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
@@ -230,7 +233,9 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
       duration_days: 62,
       san_pham: defaultProducts,
       gia_tien: defaultTotal,
-      status: CustomerStatus.ACTIVE
+      status: CustomerStatus.ACTIVE,
+      link: '',
+      video_date: ''
     });
     setIsAddModalOpen(true);
     setShowProductDropdown(false);
@@ -466,6 +471,16 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
 
   return (
     <Layout 
+      title={
+        <a 
+          href="https://docs.google.com/spreadsheets/d/1SV3Zwk93Kti3YxyYuRfTwkM9arm893t0rAMT7iAWeP0/edit?gid=0#gid=0" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="hover:text-blue-600 transition-colors"
+        >
+          MAGA PHƯƠNG ADMIN
+        </a>
+      }
       onIconClick={handleAddStudent}
       actions={
         <div className="flex gap-2">
@@ -644,6 +659,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
             <LineInput 
               label="Tên học viên" 
               placeholder="VÍ DỤ: NGUYỄN THỊ MAI" 
+              icon={<User size={14} />}
               value={formData.customer_name} 
               onChange={e => setFormData({ ...formData, customer_name: e.target.value.toUpperCase() })} 
             />
@@ -652,12 +668,14 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
               <LineInput 
                 label="Số điện thoại" 
                 placeholder="09xx..." 
+                icon={<Phone size={14} />}
                 value={formData.sdt} 
                 onChange={e => setFormData({ ...formData, sdt: e.target.value })} 
               />
               <LineInput 
                 label="Email" 
                 placeholder="example@mail.com" 
+                icon={<Mail size={14} />}
                 value={formData.email} 
                 onChange={e => setFormData({ ...formData, email: e.target.value })} 
               />
@@ -679,8 +697,17 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
             </div>
 
             <LineInput 
+              label="Mã vận đơn" 
+              placeholder="Mã vận đơn..." 
+              icon={<Truck size={14} />}
+              value={formData.ma_vd} 
+              onChange={e => setFormData({ ...formData, ma_vd: e.target.value })} 
+            />
+
+            <LineInput 
               label="Địa chỉ" 
               placeholder="Số nhà, tên đường, quận/huyện..." 
+              icon={<MapPin size={14} />}
               value={formData.dia_chi} 
               onChange={e => setFormData({ ...formData, dia_chi: e.target.value })} 
             />
@@ -727,6 +754,29 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
             </div>
 
             <div className="bg-gray-50/50 rounded-3xl p-6 border border-blue-50">
+              <div className="flex items-center gap-4 mb-4">
+                <span className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">PHÁC ĐỒ:</span>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => {
+                      setIsAddModalOpen(false);
+                      onNavigate('plan-editor', { draftCustomer: formData });
+                    }}
+                    className="flex items-center justify-center w-10 h-10 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all border border-blue-100 hover:scale-110"
+                    title="Thêm phác đồ mới"
+                  >
+                    <Plus size={22} />
+                  </button>
+                  <button 
+                    onClick={() => setIsCopyModalOpen(true)}
+                    className="flex items-center justify-center w-10 h-10 bg-orange-50 text-orange-600 rounded-xl hover:bg-orange-100 transition-all border border-orange-100 hover:scale-110"
+                    title="Copy phác đồ từ học viên khác"
+                  >
+                    <CopyPlus size={22} />
+                  </button>
+                </div>
+              </div>
+
               <div className="flex flex-col gap-4 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
                 {(formData.san_pham || []).map(item => (
                   <div key={item.id_sp} className="flex items-center justify-between group bg-white p-3 rounded-2xl border border-blue-50/50 shadow-sm">
@@ -758,6 +808,63 @@ export const Dashboard: React.FC<{ onNavigate: (page: string, params?: any) => v
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isCopyModalOpen}
+        onClose={() => { setIsCopyModalOpen(false); setCopySearchTerm(""); }}
+        title="CHỌN HỌC VIÊN ĐỂ COPY PHÁC ĐỒ"
+        maxWidth="max-w-2xl"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="relative">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input 
+              type="text"
+              placeholder="Tìm tên, SĐT học viên..."
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-blue-900"
+              value={copySearchTerm}
+              onChange={(e) => setCopySearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="max-h-[400px] overflow-y-auto custom-scrollbar flex flex-col gap-2">
+            {customers
+              .filter(c => c.video_date && (
+                c.customer_name.toLowerCase().includes(copySearchTerm.toLowerCase()) ||
+                c.sdt.includes(copySearchTerm)
+              ))
+              .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+              .map(c => (
+                <div 
+                  key={c.customer_id}
+                  onClick={async () => {
+                    if (isCopying) return;
+                    setIsCopying(true);
+                    try {
+                      onNavigate('plan-editor', { draftCustomer: formData, templateId: c.customer_id });
+                      setIsCopyModalOpen(false);
+                      setIsAddModalOpen(false);
+                    } catch (e) {
+                      alert("Lỗi khi copy phác đồ!");
+                    } finally {
+                      setIsCopying(false);
+                    }
+                  }}
+                  className="flex items-center justify-between p-4 hover:bg-blue-50 rounded-2xl cursor-pointer border border-transparent hover:border-blue-100 transition-all group"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-black text-blue-900 uppercase text-sm group-hover:text-blue-600">{c.customer_name}</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">SĐT: {c.sdt || '---'} | NGÀY: {formatDDMMYYYY(c.video_date)}</span>
+                  </div>
+                  <CopyPlus size={18} className="text-gray-300 group-hover:text-blue-600" />
+                </div>
+              ))}
+            {customers.filter(c => c.video_date).length === 0 && (
+              <div className="py-10 text-center text-gray-400 italic text-sm">Chưa có học viên nào có phác đồ để copy...</div>
+            )}
           </div>
         </div>
       </Modal>

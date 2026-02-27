@@ -22,9 +22,13 @@ const App: React.FC = () => {
     const handleHashChange = () => {
       const hash = window.location.hash;
       if (hash.startsWith('#/client/')) {
-        const id = hash.replace('#/client/', '');
+        const rest = hash.replace('#/client/', '');
+        const parts = rest.split('?');
+        const idPart = parts[0] || '';
+        const queryPart = parts[1] || '';
+        const token = new URLSearchParams(queryPart).get('t') || undefined;
         setCurrentPage('preview');
-        setPageParams({ customerId: id });
+        setPageParams({ customerId: idPart, token });
       } else if (hash === '#/dashboard') {
         setCurrentPage('dashboard');
       }
@@ -170,7 +174,7 @@ const App: React.FC = () => {
       case 'products':
         return <ProductManagement onNavigate={navigate} />;
       case 'preview':
-        return <ClientView customerId={pageParams.customerId} onNavigate={navigate} />;
+        return <ClientView customerId={pageParams.customerId} token={pageParams.token} onNavigate={navigate} />;
       case 'video-groups':
         return <VideoGroupManagement onNavigate={navigate} />;
       default:

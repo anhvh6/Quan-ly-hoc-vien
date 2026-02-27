@@ -3,7 +3,7 @@ import { Customer, Product, ExerciseTask, CustomerStatus, ExerciseType } from '.
 import { DEFAULT_SIDEBAR_BLOCKS } from '../constants';
 import { toISODateKey } from '../utils/date';
 
-const API_URL = "https://script.google.com/macros/s/AKfycbzfaJaIjP6R57A3wgKFGfx_-H4YNGoRfvNzS8oOs1J2kQDx3vPb3UHLEeXVeCH0tvA-XQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzSnplwm9SYdns0RhYr-fNwWatFhpwrd6rraK-fBFhR5OKYnz4JTl_Ba4JKRLbANJWw/exec";
 
 const normalizeCustomer = (item: any): Customer => {
   if (!item) return item;
@@ -51,7 +51,11 @@ const request = async (params: any, method: 'GET' | 'POST' = 'GET'): Promise<any
   };
   
   if (method === 'GET') {
-    Object.keys(params).forEach(k => url.searchParams.append(k, String(params[k])));
+    Object.keys(params).forEach(k => {
+      if (params[k] !== undefined && params[k] !== null) {
+        url.searchParams.append(k, String(params[k]));
+      }
+    });
     url.searchParams.append('_t', Date.now().toString());
   } else {
     options.body = JSON.stringify(params);
@@ -95,8 +99,8 @@ export const api = {
     const data = await request({ action: 'getCustomers' });
     return (data || []).map(normalizeCustomer);
   },
-  getCustomerById: async (id: string) => {
-    const data = await request({ action: 'getCustomer', id });
+  getCustomerById: async (id: string, token?: string) => {
+    const data = await request({ action: 'getCustomer', id, token });
     return data ? normalizeCustomer(data) : null;
   },
   upsertCustomer: async (data: Partial<Customer>, tasks?: ExerciseTask[] | null) => {
@@ -110,19 +114,25 @@ export const api = {
     return normalizeCustomer(res.payload || payload);
   },
   getProducts: async () => request({ action: 'getProducts' }),
+  getPlanEditorData: async (id?: string, templateId?: string) => {
+    const data = await request({ action: 'getPlanEditorData', id, templateId });
+    if (data.customer) data.customer = normalizeCustomer(data.customer);
+    if (data.template) data.template = normalizeCustomer(data.template);
+    return data;
+  },
   saveProducts: async (p: Product[]) => request({ action: 'saveProducts', payload: p }, 'POST'),
   getVideoDates: async () => request({ action: 'getVideoDates' }),
   getVideoGroups: async () => request({ action: 'getVideoGroups' }),
-  getPlan: async (customerId: string, videoDate: string) => request({ action: 'getPlan', customerId, videoDate: toISODateKey(videoDate) }),
+  getPlan: async (customerId: string, videoDate: string, token?: string) => request({ action: 'getPlan', customerId, videoDate: toISODateKey(videoDate), token }),
   deleteCustomer: async (id: string) => request({ action: 'deleteCustomer', id }, 'POST'),
   saveVideoGroupTasks: async (videoDate: string, tasks: ExerciseTask[]) => request({ action: 'saveVideoGroupTasks', videoDate: toISODateKey(videoDate), tasks }, 'POST'),
   deleteVideoTask: async (rowNumber: number) => request({ action: 'deleteVideoTask', rowNumber }, 'POST'),
   deleteVideoGroup: async (videoDateKey: string) => request({ action: 'deleteVideoGroup', videoDateKey: toISODateKey(videoDateKey) }, 'POST'),
-  refreshClientData: async (id: string) => {
-    const data = await request({ action: 'getCustomer', id });
+  refreshClientData: async (id: string, token?: string) => {
+    const data = await request({ action: 'getCustomer', id, token });
     if (!data) return null;
     const customer = normalizeCustomer(data);
-    const tasks = await api.getPlan(id, customer.video_date);
+    const tasks = await api.getPlan(id, customer.video_date, token);
     return { customer, tasks: tasks || [] };
   }
 };
