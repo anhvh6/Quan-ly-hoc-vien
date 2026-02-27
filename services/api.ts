@@ -3,7 +3,7 @@ import { Customer, Product, ExerciseTask, CustomerStatus, ExerciseType } from '.
 import { DEFAULT_SIDEBAR_BLOCKS } from '../constants';
 import { toISODateKey } from '../utils/date';
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxw_EQXOmzZnov6IRLLjse9G1AX_yaJ_r-jUwEvtCqZWMvOg-2xQX_XFXeyuH9Vqv_8Rw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz-LULoUAWuucTFc-4-vjXJJJm-zpeCd23yz7oF-Ji5x5SbLSzGuPbLBBRDrSvn7HYRZw/exec";
 
 const normalizeCustomer = (item: any): Customer => {
   if (!item) return item;
@@ -129,10 +129,11 @@ export const api = {
   deleteVideoTask: async (rowNumber: number) => request({ action: 'deleteVideoTask', rowNumber }, 'POST'),
   deleteVideoGroup: async (videoDateKey: string) => request({ action: 'deleteVideoGroup', videoDateKey: toISODateKey(videoDateKey) }, 'POST'),
   refreshClientData: async (id: string, token?: string) => {
-    const data = await request({ action: 'getCustomer', id, token });
-    if (!data) return null;
-    const customer = normalizeCustomer(data);
-    const tasks = await api.getPlan(id, customer.video_date, token);
-    return { customer, tasks: tasks || [] };
+    const data = await request({ action: 'getClientData', id, token });
+    if (!data || !data.customer) return null;
+    return { 
+      customer: normalizeCustomer(data.customer), 
+      tasks: data.tasks || [] 
+    };
   }
 };

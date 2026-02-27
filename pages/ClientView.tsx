@@ -176,9 +176,13 @@ export const ClientView: React.FC<{ customerId: string; token?: string; onNaviga
 
   const accessState = customer?.access_state || (customer?.status === CustomerStatus.DELETED ? "DELETED" : "ACTIVE");
   const isBlocked = accessState === "DELETED" || accessState === "EXPIRED";
+  const isStudentDomain = window.location.hostname === 'phacdo.netlify.app';
+  const showAdminUI = onNavigate && !isStudentDomain;
 
-  const renderAdminHeader = () => (
-    onNavigate && (
+  const renderAdminHeader = () => {
+    if (!showAdminUI) return null;
+
+    return (
       <div className="fixed top-0 left-0 right-0 z-[5000] bg-white border-b border-blue-50 px-6 py-3 shadow-lg flex items-center justify-center">
         <div className="w-full max-w-[1200px] flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -194,8 +198,8 @@ export const ClientView: React.FC<{ customerId: string; token?: string; onNaviga
           </div>
         </div>
       </div>
-    )
-  );
+    );
+  };
 
   if (accessDenied) {
     return (
@@ -220,7 +224,7 @@ export const ClientView: React.FC<{ customerId: string; token?: string; onNaviga
     return (
       <div className="min-h-screen bg-[#F8FBFF] flex flex-col items-center justify-center p-6 text-center">
         {renderAdminHeader()}
-        <div className={`flex flex-col items-center ${onNavigate ? 'mt-20' : ''}`}>
+        <div className={`flex flex-col items-center ${showAdminUI ? 'mt-20' : ''}`}>
           <div className="w-16 h-16 bg-white rounded-[22px] flex items-center justify-center mb-6 shadow-xl text-3xl">
             {accessState === "DELETED" ? "🔒" : "⌛"}
           </div>
@@ -257,7 +261,7 @@ export const ClientView: React.FC<{ customerId: string; token?: string; onNaviga
 
       {renderAdminHeader()}
 
-      <div className={`${onNavigate ? 'pt-28' : 'pt-10'} max-w-[1200px] mx-auto px-4 pb-20`}>
+      <div className={`${showAdminUI ? 'pt-28' : 'pt-10'} max-w-[1200px] mx-auto px-4 pb-20`}>
         <header className="text-center mb-12">
           <h1 className="text-3xl md:text-5xl font-black text-[#1E3A8A] mb-4 tracking-tight leading-tight uppercase">{customer.app_title || "Phác đồ 30 ngày thay đổi khuôn mặt"}</h1>
           <p className="text-blue-500 opacity-80 max-w-2xl mx-auto italic mb-10">"{customer.app_slogan || "Hành trình đánh thức vẻ đẹp tự nhiên, gìn giữ thanh xuân."}"</p>

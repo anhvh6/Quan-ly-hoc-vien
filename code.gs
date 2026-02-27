@@ -217,8 +217,6 @@ function doGet(e) {
           template: null,
           tasks: []
         };
-        
-        // Get dates
         const mSheet = getSheetSmart_(ss, MASTER_SHEET_NAME);
         if (mSheet) {
           const v = mSheet.getDataRange().getValues();
@@ -233,33 +231,40 @@ function doGet(e) {
             editorRes.dates = Array.from(set).sort().reverse();
           }
         }
-        
-        // Get products
         editorRes.products = dbReadSheet_Global(ss, PRODUCT_SHEET_NAME);
-        
         const allCusts = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME);
-        
         if (editorId && editorId !== "undefined" && editorId !== "null" && editorId !== "NEW") {
           editorRes.customer = allCusts.find(c => String(c.customer_id) === String(editorId));
           if (editorRes.customer && !editorTempId) {
             editorRes.tasks = getPlanData(ss, editorId, editorRes.customer.video_date);
           }
         }
-        
         if (editorTempId && editorTempId !== "undefined" && editorTempId !== "null") {
           editorRes.template = allCusts.find(c => String(c.customer_id) === String(editorTempId));
           if (editorRes.template) {
             editorRes.tasks = getPlanData(ss, editorTempId, editorRes.template.video_date);
           }
         } else if (!editorId || editorId === "NEW") {
-          // New student, no template -> load latest master if available
           const latest = editorRes.dates.length > 0 ? editorRes.dates[0] : null;
-          if (latest) {
-            editorRes.tasks = getPlanData(ss, "NEW", latest);
-          }
+          if (latest) editorRes.tasks = getPlanData(ss, "NEW", latest);
         }
-        
         res = editorRes;
+        break;
+      case 'getClientData':
+        const clientId = e.parameter.id;
+        const clientToken = e.parameter.token;
+        const clientRes = { customer: null, tasks: [] };
+        const allC = dbReadSheet_Global(ss, CUSTOMER_SHEET_NAME);
+        const found = allC.find(c => String(c.customer_id) === String(clientId));
+        if (found) {
+          if (clientToken && clientToken !== "undefined" && String(found.token) !== String(clientToken)) {
+            res = { success: false, error: "ACCESS_DENIED" };
+            return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+          }
+          clientRes.customer = found;
+          clientRes.tasks = getPlanData(ss, clientId, found.video_date);
+        }
+        res = clientRes;
         break;
       case 'test': res = "OK"; break;
       default: res = "Action not found";
