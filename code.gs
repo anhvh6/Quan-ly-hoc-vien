@@ -261,6 +261,16 @@ function doGet(e) {
             res = { success: false, error: "ACCESS_DENIED" };
             return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
           }
+          
+          // Tính toán trạng thái truy cập và cảnh báo hết hạn
+          const acc = calculateAccessState(found);
+          found.access_state = acc.state;
+          found.allowed_day = acc.allowed_day;
+          
+          const today = new Date(); today.setHours(0,0,0,0);
+          const end = toDate_Global(found.end_date);
+          found.expire_warning = (acc.state === "ACTIVE" && end && ((end.getTime() - today.getTime()) / 86400000) <= 5);
+          
           clientRes.customer = found;
           clientRes.tasks = getPlanData(ss, clientId, found.video_date);
         }
