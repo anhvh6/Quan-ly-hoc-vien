@@ -246,7 +246,7 @@ export const PlanEditor: React.FC<{ onNavigate: (page: string, params?: any) => 
     setIsAiProcessing(true);
     if (!originalNote) setOriginalNote(currentNote);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const prompt = `Bạn là chuyên gia Yoga Face của Mega Phương, bạn hãy viết lại nội dung của từng thói quen như ăn nhai, nằm nghiêng và vắt chéo chân sao cho logic và đưa ra hậu quả của các thói quen xấu đó. Nội dung được bạn viết lại không quá 5 dòng cho toàn bộ 3 thói quen đó, bỏ chủ ngữ như em, chị.... nội dung viết lại chia ra làm 2 mục: "Tình trạng hiện tại:" / "Và mong muốn cải thiện" dựa trên nội dung cung cấp từ khách hàng. Câu trả lời viết dưới dạng liệt kê các ý (chia ra làm 2 mục rõ ràng), không viết các nội dung thừa và không liên quan. Input: "${currentNote}"`;
       
       const response = await ai.models.generateContent({ 

@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const getSuggestedQuestions = async (): Promise<string[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",

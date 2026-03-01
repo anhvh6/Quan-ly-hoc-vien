@@ -38,10 +38,6 @@ const normalizeCustomer = (item: any): Customer => {
 };
 
 const request = async (params: any, method: 'GET' | 'POST' = 'GET'): Promise<any> => {
-  if (typeof fetch === 'undefined') {
-    throw new Error("FETCH_NOT_AVAILABLE: The 'fetch' API is not available in this environment.");
-  }
-
   const url = new URL(API_URL);
   const options: RequestInit = { 
     method,
